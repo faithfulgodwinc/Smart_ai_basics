@@ -43,19 +43,36 @@ def now():
 
 # --- Settings -------------------------------------------------------------
 
-def get_email():
+def get_setting(key):
     with connect() as conn:
-        row = conn.execute("SELECT value FROM settings WHERE key = 'reminder_email'").fetchone()
+        row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
     return row["value"] if row else None
 
 
-def set_email(email):
+def set_setting(key, value):
     with connect() as conn:
         conn.execute(
-            "INSERT INTO settings (key, value) VALUES ('reminder_email', ?) "
+            "INSERT INTO settings (key, value) VALUES (?, ?) "
             "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-            (email,),
+            (key, value),
         )
+
+
+def get_email():
+    return get_setting("reminder_email")
+
+
+def set_email(email):
+    set_setting("reminder_email", email)
+
+
+def get_time_zone():
+    """e.g. 'Africa/Lagos'. None until the person picks one."""
+    return get_setting("time_zone")
+
+
+def set_time_zone(time_zone):
+    set_setting("time_zone", time_zone)
 
 
 # --- Cards ----------------------------------------------------------------

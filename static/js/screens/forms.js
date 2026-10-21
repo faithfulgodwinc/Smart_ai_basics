@@ -3,7 +3,9 @@
 
 import * as api from "../api.js";
 import { ApiError } from "../api.js";
-import { escapeHtml, reminderAtText } from "../format.js";
+import {
+  allTimeZones, detectedTimeZone, escapeHtml, reminderAtText, setTimeZone, timeZoneLabel,
+} from "../format.js";
 import { toast } from "../toast.js";
 
 const NEW_CARD = "__new";
@@ -14,6 +16,7 @@ const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export function renderSubscriptionForm(root, state) {
   const needsEmail = !state.email;
+  const needsTimeZone = !state.time_zone;
 
   root.innerHTML = `
     <header class="pt-10 pb-8">
@@ -34,6 +37,7 @@ export function renderSubscriptionForm(root, state) {
         ${field("deadline", "Next billing date", `<input id="deadline" name="deadline" type="date" class="field-input">`)}
         ${field("reminder_time", "Remind me at", `<input id="reminder_time" name="reminder_time" type="time" value="09:00" class="field-input">`)}
       </div>
+      <p id="reminder-settings-line" class="-mt-3 text-sm text-graphite leading-relaxed"></p>
 
       ${field("card_id", "Card", `
         <select id="card_id" name="card_id" class="field-input">
@@ -50,7 +54,8 @@ export function renderSubscriptionForm(root, state) {
       </div>
       ${field("source_value", "Cancel or plans link", `<input id="source_value" name="source_value" class="field-input" placeholder="https://" autocomplete="off">`)}
 
-      ${needsEmail ? field("email", "Where should reminders go?", `<input id="email" name="email" type="email" class="field-input" placeholder="you@example.com" autocomplete="email">`) : ""}
+      ${needsEmail ? emailField("Where should reminders go?") : ""}
+      ${needsTimeZone ? timeZoneField("Your time zone", detectedTimeZone()) : ""}
 
       <p class="field-error" data-error-for="form"></p>
       <button type="submit" class="btn-primary">Save</button>
@@ -58,6 +63,7 @@ export function renderSubscriptionForm(root, state) {
 
   const form = root.querySelector("form");
   const inputs = form.elements;
+  showReminderSettingsLine(root, state);
   let sourceType = "website";
   let lastCardValue = inputs.card_id.value;
 
@@ -108,17 +114,19 @@ export function renderSubscriptionForm(root, state) {
       source_type: sourceType,
       source_value: inputs.source_value.value.trim(),
     };
-    const email = needsEmail ? inputs.email.value.trim() : null;
+    const settings = {};
+    if (needsEmail) settings.email = inputs.email.value.trim();
+    if (needsTimeZone) settings.time_zone = inputs.time_zone.value.trim();
 
     clearErrors(root);
-    const errors = checkSubscription(values, email, needsEmail);
+    const errors = { ...checkSubscription(values), ...checkSettings(settings) };
     if (showErrors(root, errors)) return;
 
     const button = form.querySelector('[type="submit"]');
     button.disabled = true;
     try {
-      if (needsEmail) {
-        state.email = (await api.saveEmail(email)).email;
+      if (Object.keys(settings).length) {
+        applySettings(state, await api.saveSettings(settings));
       }
       const result = await api.saveSubscription(values);
       state.subscriptions.push(result.subscription);
@@ -140,7 +148,7 @@ function cardOptions(state) {
   return `${placeholder}${options.join("")}<option value="${NEW_CARD}">New card…</option>`;
 }
 
-export function checkSubscription(values, email, needsEmail) {
+export function checkSubscription(values) {
   const errors = {};
   if (!values.name) errors.name = "Add a name.";
   const cost = Number(values.monthly_cost);
@@ -153,14 +161,25 @@ export function checkSubscription(values, email, needsEmail) {
     errors.source_value = "Paste the full link, starting with https://";
   }
   if (values.source_type === "app" && !values.source_value) errors.source_value = "Add the app's name.";
-  if (needsEmail && !EMAIL_PATTERN.test(email || "")) errors.email = "That email doesn't look right. Try name@example.com.";
+  return errors;
+}
+
+// Checks whichever settings are present ({ email, time_zone }).
+export function checkSettings(settings) {
+  const errors = {};
+  if ("email" in settings && !EMAIL_PATTERN.test(settings.email)) {
+    errors.email = "That email doesn't look right. Try name@example.com.";
+  }
+  if ("time_zone" in settings && !allTimeZones().includes(settings.time_zone)) {
+    errors.time_zone = "Choose a time zone from the list, like Africa/Lagos.";
+  }
   return errors;
 }
 
 // What happened to the reminder when this subscription was saved.
 function reminderNote({ reminder, reminder_at: reminderAt }, email) {
   if (reminder === "sent") return `Saved. Reminder sent to ${email}.`;
-  if (reminder === "scheduled") return `Saved. Reminder set for ${reminderAtText(reminderAt)}.`;
+  if (reminder === "scheduled") return `Saved. Reminder set for ${reminderAtText(reminderAt)}, to ${email}.`;
   if (reminder === "failed") return "Saved. The reminder email couldn't be sent — check the email settings in .env.";
   return "Saved.";
 }
@@ -168,10 +187,7 @@ function reminderNote({ reminder, reminder_at: reminderAt }, email) {
 // --- Card sheet ------------------------------------------------------------
 
 function openCardSheet({ onSaved, onClosed }) {
-  const sheet = document.getElementById("sheet");
-  const backdrop = document.getElementById("sheet-backdrop");
-
-  sheet.innerHTML = `
+  const { sheet, close } = openSheet(`
     <div class="mx-auto mb-6 h-1 w-10 rounded-full bg-line"></div>
     <h2 class="text-2xl font-semibold tracking-tight">New card</h2>
     <p class="mt-2 text-sm text-graphite">No card number. Just enough to recognise it.</p>
@@ -182,19 +198,7 @@ function openCardSheet({ onSaved, onClosed }) {
       <p class="field-error" data-error-for="form"></p>
       <button type="submit" class="btn-primary">Save card</button>
       <button type="button" data-close class="w-full py-3 text-graphite">Cancel</button>
-    </form>`;
-  sheet.hidden = false;
-  backdrop.hidden = false;
-  sheet.querySelector("input").focus();
-
-  const close = () => {
-    sheet.hidden = true;
-    backdrop.hidden = true;
-    sheet.innerHTML = "";
-    onClosed();
-  };
-  backdrop.onclick = close;
-  sheet.querySelector("[data-close]").onclick = close;
+    </form>`, onClosed);
 
   const form = sheet.querySelector("form");
   const inputs = form.elements;
@@ -220,6 +224,97 @@ function openCardSheet({ onSaved, onClosed }) {
       showErrors(sheet, { [error.field || "form"]: error.message });
     }
   });
+}
+
+// --- Reminder settings (email + time zone) -----------------------------------
+
+function applySettings(state, settings) {
+  state.email = settings.email;
+  state.time_zone = settings.time_zone;
+  setTimeZone(settings.time_zone);
+}
+
+// "Reminders go to you@gmail.com · Lagos time (GMT+1) · Change"
+function showReminderSettingsLine(root, state) {
+  const line = root.querySelector("#reminder-settings-line");
+  if (!state.email || !state.time_zone) {
+    line.hidden = true;
+    return;
+  }
+  line.hidden = false;
+  line.innerHTML = `Reminders go to <span class="text-ink">${escapeHtml(state.email)}</span>
+    · ${escapeHtml(timeZoneLabel(state.time_zone))}
+    · <button type="button" class="underline underline-offset-2 text-ink">Change</button>`;
+  line.querySelector("button").onclick = () =>
+    openReminderSettings(state, () => showReminderSettingsLine(root, state));
+}
+
+// The one place to change where reminders go and which time zone they follow.
+export function openReminderSettings(state, onSaved = () => {}) {
+  const { sheet, close } = openSheet(`
+    <div class="mx-auto mb-6 h-1 w-10 rounded-full bg-line"></div>
+    <h2 class="text-2xl font-semibold tracking-tight">Reminder settings</h2>
+    <p class="mt-2 text-sm text-graphite">One email and one time zone for all your reminders.</p>
+    <form novalidate class="mt-6 space-y-5">
+      ${emailField("Send reminders to", state.email || "")}
+      ${timeZoneField("Time zone", state.time_zone || detectedTimeZone())}
+      <p class="field-error" data-error-for="form"></p>
+      <button type="submit" class="btn-primary">Save</button>
+      <button type="button" data-close class="w-full py-3 text-graphite">Cancel</button>
+    </form>`);
+
+  const form = sheet.querySelector("form");
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const settings = {
+      email: form.elements.email.value.trim(),
+      time_zone: form.elements.time_zone.value.trim(),
+    };
+    clearErrors(sheet);
+    if (showErrors(sheet, checkSettings(settings))) return;
+    try {
+      applySettings(state, await api.saveSettings(settings));
+      close();
+      onSaved();
+      toast(`Reminders go to ${state.email}, on ${timeZoneLabel(state.time_zone)}.`);
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error;
+      showErrors(sheet, { [error.field || "form"]: error.message });
+    }
+  });
+}
+
+function emailField(label, value = "") {
+  return field("email", label,
+    `<input id="email" name="email" type="email" class="field-input" placeholder="you@example.com" autocomplete="email" value="${escapeHtml(value)}">`);
+}
+
+// A text box with suggestions: type "Lagos" or "London" and pick from the list.
+function timeZoneField(label, value) {
+  const options = allTimeZones().map((zone) => `<option value="${zone}"></option>`).join("");
+  return field("time_zone", label, `
+    <input id="time_zone" name="time_zone" list="time-zone-list" class="field-input" value="${escapeHtml(value)}" autocomplete="off" spellcheck="false">
+    <datalist id="time-zone-list">${options}</datalist>`);
+}
+
+// Opens the bottom sheet with the given content. Returns the sheet and a close function.
+function openSheet(html, onClosed = () => {}) {
+  const sheet = document.getElementById("sheet");
+  const backdrop = document.getElementById("sheet-backdrop");
+  sheet.innerHTML = html;
+  sheet.hidden = false;
+  backdrop.hidden = false;
+  sheet.querySelector("input")?.focus();
+
+  const close = () => {
+    sheet.hidden = true;
+    backdrop.hidden = true;
+    sheet.innerHTML = "";
+    onClosed();
+  };
+  backdrop.onclick = close;
+  sheet.querySelector("[data-close]").onclick = close;
+  return { sheet, close };
 }
 
 // --- Small helpers ---------------------------------------------------------

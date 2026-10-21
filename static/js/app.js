@@ -3,11 +3,13 @@
 // so the browser's back button works.
 
 import * as api from "./api.js";
+import { setTimeZone } from "./format.js";
 import { renderHome } from "./screens/home.js";
 import { renderSubscriptionForm } from "./screens/forms.js";
 
 export const state = {
   email: null,
+  time_zone: null, // e.g. 'Africa/Lagos': dates and reminders follow this
   cards: [],
   subscriptions: [],
   currentCardId: null, // which card Home is showing
@@ -34,6 +36,7 @@ function show() {
 async function start() {
   try {
     Object.assign(state, await api.getState());
+    setTimeZone(state.time_zone);
   } catch (error) {
     document.getElementById("home").hidden = false;
     document.getElementById("home").innerHTML =

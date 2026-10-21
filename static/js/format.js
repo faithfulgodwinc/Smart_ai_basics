@@ -14,8 +14,40 @@ export function formatDate(isoDate) {
   return parseDate(isoDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
 }
 
+// --- Time zone -------------------------------------------------------------
+// "Today" follows the time zone chosen in Smart's settings, not the device's clock,
+// so the app and the reminder emails always agree.
+
+let chosenTimeZone = null;
+
+export function setTimeZone(timeZone) {
+  chosenTimeZone = timeZone || null;
+}
+
+export function detectedTimeZone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+export function allTimeZones() {
+  return Intl.supportedValuesOf ? Intl.supportedValuesOf("timeZone") : [detectedTimeZone()];
+}
+
+// Today's date in the chosen time zone, as a Date at local midnight.
+export function todayInTimeZone(timeZone = chosenTimeZone, now = new Date()) {
+  if (!timeZone) return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return parseDate(new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now));
+}
+
+// "Africa/Lagos" -> "Lagos time (GMT+1)"
+export function timeZoneLabel(timeZone, now = new Date()) {
+  const city = timeZone.split("/").pop().replace(/_/g, " ");
+  const offset = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "shortOffset" })
+    .formatToParts(now).find((part) => part.type === "timeZoneName")?.value || "";
+  return `${city} time${offset ? ` (${offset})` : ""}`;
+}
+
 // Whole days from today to the deadline: 0 = today, 1 = tomorrow, -1 = yesterday.
-export function daysLeft(deadline, today = new Date()) {
+export function daysLeft(deadline, today = todayInTimeZone()) {
   const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   return Math.round((parseDate(deadline) - start) / 86_400_000);
 }

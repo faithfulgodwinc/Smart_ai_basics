@@ -12,7 +12,7 @@ Smart has three parts.
 1. **The app (frontend).** The screens you see and tap: the landing page, home with the card carousel, the forms, details, Profile, and Cancelled history. They're written in plain HTML, CSS and JavaScript and styled with Tailwind, and they run in your browser, designed for a phone screen first. The app doesn't keep anything itself. Every time you save something, it sends the details to the server, and every time it opens, it asks the server for everything.
 
 2. **The server (backend).** A small Python program built with Flask that stays running on your laptop. It does three jobs:
-   - **Keeps your data** in a database: one file, `smart.db` (SQLite), which works like a spreadsheet the program reads and writes. It holds your cards, your subscriptions and your reminder email.
+   - **Keeps your data** in a database: one file, `smart.db` (SQLite), which works like a spreadsheet the program reads and writes. It holds your cards, your subscriptions, your reminder email and your time zone.
    - **Answers the app.** When the app says "save this subscription" or "mark this cancelled," the server updates the database and replies.
    - **Watches the deadlines.** Every minute, and once each time it starts, it asks: *"Is any active subscription due in 2 days, tomorrow or today, has its reminder time passed, and haven't I already sent that reminder?"* It also checks the moment you save something, so a subscription whose reminder is already due gets its email right away. Set the reminder time a couple of minutes ahead and you can watch it arrive on its own. That's the demo.
 
@@ -167,7 +167,7 @@ PRD ref: `prd.md > States and Boundaries` (persistence).
 
 #### Reminder logic — `reminders.py`
 Decides *whether* a reminder is due. It never sends anything itself.
-- All times are the server's local time (the laptop's clock, so the person's own time zone).
+- All times are in the person's chosen time zone (`settings.time_zone`, e.g. `Africa/Lagos`), worked out with Python's `zoneinfo`; if none is set yet, the server's own clock. `local_now()` gives "now" in that zone.
 - **The rule** for an active subscription: its possible reminders are 2 days before and 1 day before the deadline, plus a "today" reminder on the deadline only if **no** reminder was sent at all. Each one happens at the subscription's `reminder_time` on that day.
   - `next_reminder(sub, now)` picks the earliest of those that hasn't been sent and whose day isn't already over.
   - If that moment has passed (`<= now`) → send it. If it's still ahead → it's "scheduled" for that moment.
@@ -195,7 +195,7 @@ All JSON. Errors come back as `{"error": "message", "field": "fieldName"}` with 
 | Method & path | Body | Returns | Used by |
 |---|---|---|---|
 | `GET /api/state` | — | `{ email, cards: [...], subscriptions: [...] }` (active and cancelled) | app start, after any refresh |
-| `PUT /api/settings` | `{ email }` | `{ email }` | add form (first time), Profile |
+| `PUT /api/settings` | `{ email?, time_zone? }` (either or both) | `{ email, time_zone }` | add form (first time), Reminder settings sheet, Profile |
 | `POST /api/cards` | `{ nickname, bank, name_on_card }` | the card | card form |
 | `PUT /api/cards/<id>` | same | the card | card form (edit) |
 | `POST /api/subscriptions` | `{ name, monthly_cost, is_trial, deadline, reminder_time, card_id, source_type, source_value }` | `{ subscription, reminder: "sent" \| "scheduled" \| "not_due" \| "failed", reminder_at }` (`reminder_at` = `'YYYY-MM-DDTHH:MM'` when scheduled) | add form |
@@ -203,14 +203,14 @@ All JSON. Errors come back as `{"error": "message", "field": "fieldName"}` with 
 | `POST /api/subscriptions/<id>/cancel` | — | the subscription | Needs attention, Details |
 | `POST /api/subscriptions/<id>/renew` | `{ deadline }` | `{ subscription, reminder }` | renew sheet |
 
-Saving a subscription is refused (400, field `email`) if no reminder email is set. That's the server-side half of "no email yet." Editing a deadline also clears `last_reminded_days`, so reminders follow the new date.
+Saving a subscription is refused (400, field `email` or `time_zone`) if no reminder email or time zone is set. That's the server-side half of "no email yet." Editing a deadline also clears `last_reminded_days`, so reminders follow the new date.
 
 ## Data Model
 
 `smart.db`, three tables:
 
 ```sql
-settings      (key TEXT PRIMARY KEY, value TEXT)            -- one row: 'reminder_email'
+settings      (key TEXT PRIMARY KEY, value TEXT)            -- rows: 'reminder_email', 'time_zone'
 cards         (id INTEGER PRIMARY KEY,
                nickname TEXT NOT NULL, bank TEXT NOT NULL, name_on_card TEXT NOT NULL,
                created_at TEXT NOT NULL)
@@ -249,7 +249,7 @@ AI Basics/
 ├── schema.sql              # Table definitions for settings, cards, subscriptions
 ├── reminders.py            # "Is a reminder due?" rule, check_one / check_all, once-a-minute watcher loop
 ├── mailer.py               # Builds the email and sends it through Gmail SMTP
-├── requirements.txt        # flask, python-dotenv
+├── requirements.txt        # flask, python-dotenv, tzdata
 ├── .env.example            # GMAIL_ADDRESS=, GMAIL_APP_PASSWORD=, APP_URL=http://localhost:5000
 ├── .env                    # Your real values (git-ignored, never pushed)
 ├── .gitignore              # .env, smart.db, .venv/, __pycache__/
@@ -296,7 +296,7 @@ AI Basics/
 - One `<link>` in `index.html`. Free, no key. Falls back to the system font offline.
 
 ### Python packages
-- `flask` 3.x ([docs](https://flask.palletsprojects.com/)), `python-dotenv` ([docs](https://pypi.org/project/python-dotenv/)). Everything else (`sqlite3`, `smtplib`, `email`, `threading`) is built into Python.
+- `flask` 3.x ([docs](https://flask.palletsprojects.com/)), `python-dotenv` ([docs](https://pypi.org/project/python-dotenv/)), `tzdata` (the world's time-zone rules, which Windows doesn't ship to Python; [zoneinfo docs](https://docs.python.org/3/library/zoneinfo.html)). Everything else (`sqlite3`, `smtplib`, `email`, `threading`) is built into Python.
 
 ## Important Failure Modes
 

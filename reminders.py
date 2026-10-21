@@ -8,12 +8,15 @@ The rule, for an active subscription:
     sent twice, and only closer reminders can follow.
   - After the deadline day, no email. The app shows it under "Needs attention" instead.
 
-All times are the laptop's local time, so they're in the person's own time zone.
+All times are in the person's chosen time zone (a setting, e.g. Africa/Lagos), not the
+server's clock, so reminders still arrive at the right moment when the laptop is set to
+another zone, the person travels, or the server runs somewhere else.
 """
 
 import threading
 import time
 from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import db
 import mailer
@@ -23,6 +26,14 @@ CHECK_EVERY_SECONDS = 60
 # The save-time check and the background check run at the same time sometimes.
 # This lock lets only one of them look at (and send) reminders at once, so nothing is sent twice.
 _lock = threading.Lock()
+
+
+def local_now():
+    """The current date and time in the person's chosen time zone (the laptop's own if none is set)."""
+    time_zone = db.get_time_zone()
+    if not time_zone:
+        return datetime.now()
+    return datetime.now(ZoneInfo(time_zone)).replace(tzinfo=None)
 
 
 def reminder_moments(sub):
@@ -74,15 +85,16 @@ def _check(sub, now):
 def check_one(sub_id, now=None):
     """Runs right after a subscription is saved, edited or renewed."""
     with _lock:
-        return _check(db.get_subscription(sub_id), now or datetime.now())
+        return _check(db.get_subscription(sub_id), now or local_now())
 
 
 def check_all(now=None):
     """Runs when the server starts and then every minute."""
     with _lock:
+        now = now or local_now()
         for sub in db.list_active_subscriptions():
             try:
-                _check(sub, now or datetime.now())
+                _check(sub, now)
             except Exception as error:  # one broken subscription mustn't stop the others
                 print(f"[reminders] Couldn't check subscription {sub['id']}: {error}")
 

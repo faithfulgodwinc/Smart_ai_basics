@@ -27,6 +27,6 @@ async function request(method, path, body) {
 }
 
 export const getState = () => request("GET", "/api/state");
-export const saveEmail = (email) => request("PUT", "/api/settings", { email });
+export const saveSettings = (settings) => request("PUT", "/api/settings", settings);
 export const saveCard = (card) => request("POST", "/api/cards", card);
 export const saveSubscription = (sub) => request("POST", "/api/subscriptions", sub);

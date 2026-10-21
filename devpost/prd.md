@@ -15,7 +15,7 @@ Source: `scope.md > The Unique Kernel`, `scope.md > The Core Loop`, `scope.md > 
 2. **Empty home.** They have no cards or subscriptions yet. Home shows the floating nav bar and a gentle prompt pointing at the **plus button** to add their first subscription.
 3. **Add a subscription.** They tap plus and fill in the name, the monthly cost, whether it's a **free trial they intend to cancel**, the trial end / next billing date, the card it's on, and **where they subscribed** (a website link, or the app's name).
    - If the card doesn't exist yet, they create it here: nickname, bank, name on card. No card number.
-   - If Smart has no email address yet, it asks for one here, before the first subscription can be saved. The email then shows up in Profile.
+   - If Smart has no email address or time zone yet, it asks for them here (the time zone pre-filled from the device), before the first subscription can be saved. After that, the form shows where reminders go and in which time zone, with a **Change** link to Reminder settings.
 4. **See it land.** Home updates. The subscription appears under its card, with the time left and the renewal date. Free trials are labelled and shown first. The card's monthly total and the overall monthly total both update.
 5. **More cards.** They add more subscriptions and cards, and **swipe between cards** on home to see what each card is carrying.
 6. **Reminder.** Two days before the deadline, and again one day before, at the **reminder time** they chose for that subscription, Smart sends a **reminder email** naming the subscription, when it renews, and how to cancel: the website link, or the app to go to. The email has an **"Open Smart"** button.
@@ -91,7 +91,7 @@ Five calm screens. Detail is kept tucked away until someone asks for it.
 
 ### Reminder Emails
 *(scope: What "Working" Looks Like, The POC Boundary)*
-- [ ] A real email is sent to the person's address **2 days before** and **1 day before** the deadline, once that day's clock reaches the subscription's reminder time (the laptop's local time).
+- [ ] A real email is sent to the person's address **2 days before** and **1 day before** the deadline, once that day's clock reaches the subscription's reminder time, in the person's chosen time zone.
 - [ ] Reminders stop once the subscription is marked cancelled or renewed.
 - [ ] If a reminder is already due when the subscription is saved (deadline within 2 days, including today, and the reminder time has passed), the email is sent right away.
 - [ ] Otherwise, after saving, Smart says when the next reminder will arrive, and it arrives at that time without anyone touching the app. **This is how the live demo works:** add "Netflix, expires today, remind me at" two minutes from now, save, wait, and the email arrives.
@@ -107,7 +107,7 @@ Five calm screens. Detail is kept tucked away until someone asks for it.
 
 ### Profile
 - [ ] The profile icon (top right of home) opens Profile.
-- [ ] Profile shows the reminder email, which can be changed.
+- [ ] Profile shows the reminder email and time zone, which can be changed (through the same Reminder settings sheet the add form links to).
 - [ ] Profile shows calm summary stats about subscription spending, without heavy detail.
 
 ### Cancelled History
@@ -135,7 +135,7 @@ Five calm screens. Detail is kept tucked away until someone asks for it.
 - **The email's button only opens Smart (Option B),** and updates happen in the app. It's simpler and more reliable for the demo than update buttons in the email.
 - **Reminders at 2 days and 1 day before, and they stop once updated.**
 - **Send immediately if a reminder is already due.** It makes the demo natural (add something expiring today) with no special demo button.
-- **A reminder time per subscription** (added during the build). A live demo can show an email arriving on its own a couple of minutes after saving, proving Smart watches deadlines by itself. It uses the laptop's clock, so it's already the person's own time zone; detecting time zones automatically waits until Smart is online.
+- **A reminder time per subscription** (added during the build). A live demo can show an email arriving on its own a couple of minutes after saving, proving Smart watches deadlines by itself. Reminder times follow a **time zone the person sets** (pre-filled from their device, changeable any time in Reminder settings), so they stay right when the laptop is set to another region or the person travels.
 - **"Where did you subscribe" is captured when adding,** so the email can be precise (a link for websites, the app name for apps).
 - **Profile is a summary; home is for tracking.**
 - **Black-and-white palette** chosen by the learner, for calm without colorful noise.

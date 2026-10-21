@@ -6,6 +6,7 @@ Start it with:  python app.py   then open http://localhost:5000
 import os
 import re
 from datetime import date
+from zoneinfo import available_timezones
 
 from flask import Flask, jsonify, render_template, request
 
@@ -31,6 +32,7 @@ def invalid_input(error):
 # --- Checks (the app's forms repeat these, so messages show next to the field) ---
 
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+TIME_ZONES = available_timezones()  # every real zone name, e.g. 'Africa/Lagos'
 TIME_PATTERN = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")  # 24-hour 'HH:MM'
 
 
@@ -48,6 +50,13 @@ def valid_email(body):
     if not EMAIL_PATTERN.match(email):
         raise InvalidInput("email", "That email doesn't look right. Try name@example.com.")
     return email
+
+
+def valid_time_zone(body):
+    time_zone = str(body.get("time_zone") or "").strip()
+    if time_zone not in TIME_ZONES:
+        raise InvalidInput("time_zone", "Choose a time zone from the list, like Africa/Lagos.")
+    return time_zone
 
 
 def valid_cost_cents(body):
@@ -121,6 +130,7 @@ def index():
 def get_state():
     return jsonify(
         email=db.get_email(),
+        time_zone=db.get_time_zone(),
         cards=db.list_cards(),
         subscriptions=db.list_subscriptions(),
     )
@@ -128,9 +138,15 @@ def get_state():
 
 @app.put("/api/settings")
 def put_settings():
-    email = valid_email(request.get_json(silent=True) or {})
-    db.set_email(email)
-    return jsonify(email=email)
+    """Updates the reminder email and/or the time zone (whichever is sent)."""
+    body = request.get_json(silent=True) or {}
+    email = valid_email(body) if "email" in body else None
+    time_zone = valid_time_zone(body) if "time_zone" in body else None
+    if email:
+        db.set_email(email)
+    if time_zone:
+        db.set_time_zone(time_zone)
+    return jsonify(email=db.get_email(), time_zone=db.get_time_zone())
 
 
 @app.post("/api/cards")
@@ -148,6 +164,8 @@ def post_card():
 def post_subscription():
     if not db.get_email():
         raise InvalidInput("email", "Add the email where reminders should go.")
+    if not db.get_time_zone():
+        raise InvalidInput("time_zone", "Choose the time zone your reminders should follow.")
     fields = subscription_fields(request.get_json(silent=True) or {})
     subscription = db.insert_subscription(fields)
     result = reminders.check_one(subscription["id"])  # sends it now if it's already due
