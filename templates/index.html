@@ -31,13 +31,16 @@
 <body class="bg-paper text-ink font-sans antialiased">
   <div class="mx-auto min-h-dvh max-w-[440px] px-6 pb-40">
     <!-- One container per screen. app.js shows one and hides the rest. -->
+    <section id="landing" class="screen" hidden></section>
     <section id="home" class="screen" hidden></section>
     <section id="add" class="screen" hidden></section>
     <section id="details" class="screen" hidden></section>
     <section id="edit" class="screen" hidden></section>
+    <section id="profile" class="screen" hidden></section>
+    <section id="history" class="screen" hidden></section>
   </div>
 
-  <!-- Sheet that slides up over a screen (the card form). -->
+  <!-- Sheet that slides up over a screen (card, renew, reminder settings). -->
   <div id="sheet-backdrop" class="sheet-backdrop" hidden></div>
   <div id="sheet" class="sheet" hidden></div>
 
@@ -48,6 +51,9 @@
     </a>
     <a href="#add" class="nav-item nav-add" aria-label="Add a subscription">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </a>
+    <a href="#profile" class="nav-item" aria-label="Profile">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c1.2-3.6 4-5.5 7-5.5s5.8 1.9 7 5.5"/></svg>
     </a>
   </nav>
 

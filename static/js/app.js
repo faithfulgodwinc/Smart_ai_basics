@@ -7,6 +7,9 @@ import { setTimeZone } from "./format.js";
 import { renderHome } from "./screens/home.js";
 import { renderSubscriptionForm } from "./screens/forms.js";
 import { renderDetails } from "./screens/details.js";
+import { hasSeenLanding, renderLanding } from "./screens/landing.js";
+import { renderProfile } from "./screens/profile.js";
+import { renderHistory } from "./screens/history.js";
 
 export const state = {
   email: null,
@@ -21,18 +24,26 @@ const screens = {
   add: renderSubscriptionForm,
   details: renderDetails,
   edit: renderSubscriptionForm,
+  landing: renderLanding,
+  profile: renderProfile,
+  history: renderHistory,
 };
+
+// Screens that belong to a nav button: details and edit live under Home, history under Profile.
+const NAV_SECTION = { details: "home", edit: "home", history: "profile" };
 
 function show() {
   const [name, id] = (location.hash.slice(1) || "home").split("/");
-  const target = screens[name] ? name : "home";
+  let target = screens[name] ? name : "home";
+  if (target === "home" && !hasSeenLanding()) target = "landing"; // first visit
+  document.querySelector(".floating-nav").hidden = target === "landing";
   for (const section of document.querySelectorAll(".screen")) {
     section.hidden = section.id !== target;
     if (section.hidden) section.innerHTML = ""; // so field ids never appear twice on the page
   }
   screens[target](document.getElementById(target), state, id);
   for (const link of document.querySelectorAll(".nav-item")) {
-    link.classList.toggle("is-active", link.getAttribute("href") === `#${target}`);
+    link.classList.toggle("is-active", link.getAttribute("href") === `#${NAV_SECTION[target] || target}`);
   }
   window.scrollTo(0, 0);
 }

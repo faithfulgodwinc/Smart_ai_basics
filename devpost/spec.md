@@ -97,7 +97,7 @@ Carried from `prd.md > Look and Feel` and `scope.md > Inspiration & Identity`. T
 - **Typography:** `-apple-system, "SF Pro Text", Inter, system-ui, sans-serif`. Big, light-weight numbers for totals. Tight letter-spacing on headings, generous line-height on body text. Very little text overall.
 - **Space and density:** spacious and calm. A single column at phone width (max ~440px, centered on wider screens), large padding, rows separated by hairlines rather than boxes.
 - **Cards:** the centerpiece. Near-black rounded rectangles (credit-card proportions 1.586:1) with a soft gradient sheen, a subtle noise texture, nickname large, bank and name on card small, the card's monthly total, and a small row of decorative network marks drawn as simple inline SVG shapes (never claiming the real network).
-- **Floating nav:** a vertical pill fixed at the bottom right, frosted (`backdrop-blur`), holding Home, Add (+, filled ink circle), and Profile.
+- **Floating nav:** a vertical pill fixed at the bottom right, frosted (`backdrop-blur`) on a soft mist surface, holding Home, Add (+, filled ink circle), and Profile. The button for the current screen looks softly **pressed in** (inset shadows, light from the top left); details/edit count as Home and Cancelled history as Profile.
 - **Motion:** soft only. 200–300 ms ease-out fades or slides between screens, the card carousel snaps, and rows animate in on add or remove. Respect `prefers-reduced-motion`.
 - **Copy tone:** short, warm, calm. "Nothing here yet." "Have you cancelled this?" "You're way ahead."
 - **Email look:** the same restraint. White background, black type, one black "Open Smart" button.
