@@ -1,4 +1,4 @@
-// The subscription form, the card sheet that opens over it, and their checks.
+// The subscription form (add and edit), the card sheet that opens over it, and their checks.
 // The server repeats the same checks, so a message always appears next to the right field.
 
 import * as api from "../api.js";
@@ -14,14 +14,21 @@ const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 // --- Subscription form ---------------------------------------------------
 
-export function renderSubscriptionForm(root, state) {
+// subId given -> edit that subscription; otherwise add a new one.
+export function renderSubscriptionForm(root, state, subId = null) {
+  const editing = subId ? state.subscriptions.find((sub) => sub.id === Number(subId)) : null;
+  if (subId && !editing) {
+    location.hash = "#home";
+    return;
+  }
   const needsEmail = !state.email;
   const needsTimeZone = !state.time_zone;
+  const backTo = editing ? `#details/${editing.id}` : "#home";
 
   root.innerHTML = `
     <header class="pt-10 pb-8">
-      <a href="#home" class="text-sm text-graphite">&larr; Back</a>
-      <h1 class="mt-6 text-3xl font-semibold tracking-tight">New subscription</h1>
+      <a href="${backTo}" ${editing ? "data-replace" : ""} class="text-sm text-graphite">&larr; Back</a>
+      <h1 class="mt-6 text-3xl font-semibold tracking-tight">${editing ? "Edit subscription" : "New subscription"}</h1>
     </header>
 
     <form novalidate class="space-y-6">
@@ -41,7 +48,7 @@ export function renderSubscriptionForm(root, state) {
 
       ${field("card_id", "Card", `
         <select id="card_id" name="card_id" class="field-input">
-          ${cardOptions(state)}
+          ${cardOptions(state, editing?.card_id)}
         </select>`)}
 
       <div>
@@ -58,7 +65,7 @@ export function renderSubscriptionForm(root, state) {
       ${needsTimeZone ? timeZoneField("Your time zone", detectedTimeZone()) : ""}
 
       <p class="field-error" data-error-for="form"></p>
-      <button type="submit" class="btn-primary">Save</button>
+      <button type="submit" class="btn-primary">${editing ? "Save changes" : "Save"}</button>
     </form>`;
 
   const form = root.querySelector("form");
@@ -67,20 +74,33 @@ export function renderSubscriptionForm(root, state) {
   let sourceType = "website";
   let lastCardValue = inputs.card_id.value;
 
-  inputs.is_trial.addEventListener("change", () => {
+  const showTrialLabel = () => {
     root.querySelector('[for="deadline"]').textContent = inputs.is_trial.checked ? "Trial ends" : "Next billing date";
-  });
+  };
+  inputs.is_trial.addEventListener("change", showTrialLabel);
 
+  const chooseSource = (type, keepValue = false) => {
+    sourceType = type;
+    for (const b of root.querySelectorAll("[data-source]")) b.setAttribute("aria-pressed", String(b.dataset.source === type));
+    const isWebsite = type === "website";
+    root.querySelector('[for="source_value"]').textContent = isWebsite ? "Cancel or plans link" : "App name";
+    inputs.source_value.placeholder = isWebsite ? "https://" : "Duolingo";
+    if (!keepValue) inputs.source_value.value = "";
+    clearError(root, "source_value");
+  };
   for (const button of root.querySelectorAll("[data-source]")) {
-    button.addEventListener("click", () => {
-      sourceType = button.dataset.source;
-      for (const b of root.querySelectorAll("[data-source]")) b.setAttribute("aria-pressed", String(b === button));
-      const isWebsite = sourceType === "website";
-      root.querySelector('[for="source_value"]').textContent = isWebsite ? "Cancel or plans link" : "App name";
-      inputs.source_value.placeholder = isWebsite ? "https://" : "Duolingo";
-      inputs.source_value.value = "";
-      clearError(root, "source_value");
-    });
+    button.addEventListener("click", () => chooseSource(button.dataset.source));
+  }
+
+  if (editing) {
+    inputs.name.value = editing.name;
+    inputs.monthly_cost.value = (editing.monthly_cost_cents / 100).toFixed(2);
+    inputs.is_trial.checked = Boolean(editing.is_trial);
+    inputs.deadline.value = editing.deadline;
+    inputs.reminder_time.value = editing.reminder_time;
+    inputs.source_value.value = editing.source_value;
+    chooseSource(editing.source_type, true);
+    showTrialLabel();
   }
 
   inputs.card_id.addEventListener("change", () => {
@@ -128,6 +148,13 @@ export function renderSubscriptionForm(root, state) {
       if (Object.keys(settings).length) {
         applySettings(state, await api.saveSettings(settings));
       }
+      if (editing) {
+        const result = await api.updateSubscription(editing.id, values);
+        state.subscriptions = state.subscriptions.map((sub) => (sub.id === editing.id ? result.subscription : sub));
+        location.replace(`#details/${editing.id}`); // so Back doesn't reopen the form
+        toast(reminderNote(result, state.email).replace("Saved.", "Changes saved."));
+        return;
+      }
       const result = await api.saveSubscription(values);
       state.subscriptions.push(result.subscription);
       state.currentCardId = result.subscription.card_id;
@@ -141,9 +168,9 @@ export function renderSubscriptionForm(root, state) {
   });
 }
 
-function cardOptions(state) {
+function cardOptions(state, selectedId = state.currentCardId) {
   const options = state.cards.map((card) =>
-    `<option value="${card.id}" ${card.id === state.currentCardId ? "selected" : ""}>${escapeHtml(card.nickname)} · ${escapeHtml(card.bank)}</option>`);
+    `<option value="${card.id}" ${card.id === selectedId ? "selected" : ""}>${escapeHtml(card.nickname)} · ${escapeHtml(card.bank)}</option>`);
   const placeholder = state.cards.length ? "" : `<option value="" selected disabled>Choose a card</option>`;
   return `${placeholder}${options.join("")}<option value="${NEW_CARD}">New card…</option>`;
 }
@@ -186,10 +213,11 @@ export function reminderNote({ reminder, reminder_at: reminderAt }, email) {
 
 // --- Card sheet ------------------------------------------------------------
 
-function openCardSheet({ onSaved, onClosed }) {
+// card given -> edit it; otherwise create a new one.
+export function openCardSheet({ card: existing = null, onSaved, onClosed = () => {} }) {
   const { sheet, close } = openSheet(`
     <div class="mx-auto mb-6 h-1 w-10 rounded-full bg-line"></div>
-    <h2 class="text-2xl font-semibold tracking-tight">New card</h2>
+    <h2 class="text-2xl font-semibold tracking-tight">${existing ? "Edit card" : "New card"}</h2>
     <p class="mt-2 text-sm text-graphite">No card number. Just enough to recognise it.</p>
     <form novalidate class="mt-6 space-y-5">
       ${field("nickname", "Nickname", `<input id="nickname" name="nickname" class="field-input" placeholder="Side card" autocomplete="off">`)}
@@ -202,6 +230,11 @@ function openCardSheet({ onSaved, onClosed }) {
 
   const form = sheet.querySelector("form");
   const inputs = form.elements;
+  if (existing) {
+    inputs.nickname.value = existing.nickname;
+    inputs.bank.value = existing.bank;
+    inputs.name_on_card.value = existing.name_on_card;
+  }
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const card = {
@@ -217,7 +250,7 @@ function openCardSheet({ onSaved, onClosed }) {
     if (showErrors(sheet, errors)) return;
 
     try {
-      onSaved(await api.saveCard(card));
+      onSaved(await (existing ? api.updateCard(existing.id, card) : api.saveCard(card)));
       close();
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;

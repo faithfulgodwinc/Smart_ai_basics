@@ -222,3 +222,10 @@
 .btn-small { border: 1px solid var(--ink); border-radius: 999px; padding: 10px 12px; font-size: 14px; font-weight: 500; background: var(--paper); transition: opacity 200ms var(--ease); }
 .btn-small--ink { background: var(--ink); color: var(--paper); }
 .btn-small:disabled { opacity: 0.5; }
+
+/* --- Rows and details ------------------------------------------------------ */
+.row-link { transition: opacity 200ms var(--ease); }
+.row-link:active { opacity: 0.55; }
+.detail-row { display: flex; justify-content: space-between; gap: 16px; padding: 16px 0; border-top: 1px solid var(--line); }
+.detail-row dt { color: var(--graphite); flex: none; }
+.detail-row dd { text-align: right; min-width: 0; overflow-wrap: anywhere; }

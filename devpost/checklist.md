@@ -59,7 +59,7 @@ Build mode: learn
   Learner check: Your Netflix from step 4 should now sit at the top asking "Have you cancelled this?" Tap "Yes, cancelled" — it disappears and the totals drop. Add another short trial, tap "It renewed," pick a date a month away — it returns to the normal list with the new date.
   Commit: `Add needs-attention check with cancel and renew`
 
-- [ ] **6. Open a subscription to see the details and edit it**
+- [x] **6. Open a subscription to see the details and edit it**
   Becomes usable: Tapping a row opens a calm details view (cost, card, dates, time left, how to cancel as a tappable link or "Cancel in the [app] app") with Edit, "Yes, cancelled," and "It renewed." Editing a subscription or a card updates Home immediately; changing a deadline resets its reminders.
   Why now: Rows stay minimal by design, so details and editing come once the main loop works.
   PRD ref: `prd.md > Screens and Layout` (Subscription details), `prd.md > Adding and Editing Subscriptions` (editing)

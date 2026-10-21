@@ -40,3 +40,5 @@ export const saveCard = (card) => request("POST", "/api/cards", card);
 export const saveSubscription = (sub) => request("POST", "/api/subscriptions", sub);
 export const cancelSubscription = (id) => request("POST", `/api/subscriptions/${id}/cancel`);
 export const renewSubscription = (id, deadline) => request("POST", `/api/subscriptions/${id}/renew`, { deadline });
+export const updateSubscription = (id, sub) => request("PUT", `/api/subscriptions/${id}`, sub);
+export const updateCard = (id, card) => request("PUT", `/api/cards/${id}`, card);

@@ -149,15 +149,25 @@ def put_settings():
     return jsonify(email=db.get_email(), time_zone=db.get_time_zone())
 
 
-@app.post("/api/cards")
-def post_card():
-    body = request.get_json(silent=True) or {}
-    card = db.insert_card(
+def card_fields(body):
+    return (
         required_text(body, "nickname", "a nickname"),
         required_text(body, "bank", "the bank"),
         required_text(body, "name_on_card", "the name on the card"),
     )
+
+
+@app.post("/api/cards")
+def post_card():
+    card = db.insert_card(*card_fields(request.get_json(silent=True) or {}))
     return jsonify(card), 201
+
+
+@app.put("/api/cards/<int:card_id>")
+def put_card(card_id):
+    if not db.get_card(card_id):
+        raise InvalidInput("form", "That card doesn't exist anymore.")
+    return jsonify(db.update_card(card_id, *card_fields(request.get_json(silent=True) or {})))
 
 
 @app.post("/api/subscriptions")
@@ -195,6 +205,18 @@ def renew_subscription(sub_id):
         raise InvalidInput("deadline", "Pick the next billing date: today or later.")
     db.renew(sub_id, deadline)
     result = reminders.check_one(sub_id)  # reminders continue for the new date
+    return jsonify(subscription=db.get_subscription(sub_id), **result)
+
+
+
+@app.put("/api/subscriptions/<int:sub_id>")
+def put_subscription(sub_id):
+    before = existing_subscription(sub_id)
+    fields = subscription_fields(request.get_json(silent=True) or {})
+    # A new date or time means new reminders, so forget which ones were already sent.
+    reset = (fields["deadline"], fields["reminder_time"]) != (before["deadline"], before["reminder_time"])
+    db.update_subscription(sub_id, fields, reset_reminders=reset)
+    result = reminders.check_one(sub_id)
     return jsonify(subscription=db.get_subscription(sub_id), **result)
 
 

@@ -156,3 +156,26 @@ def renew(sub_id, deadline):
             (deadline, sub_id),
         )
     return get_subscription(sub_id)
+
+
+def update_card(card_id, nickname, bank, name_on_card):
+    with connect() as conn:
+        conn.execute(
+            "UPDATE cards SET nickname = ?, bank = ?, name_on_card = ? WHERE id = ?",
+            (nickname, bank, name_on_card, card_id),
+        )
+    return get_card(card_id)
+
+
+def update_subscription(sub_id, fields, reset_reminders):
+    """Saves an edit. reset_reminders=True forgets which reminders were sent (new date or time)."""
+    with connect() as conn:
+        conn.execute(
+            "UPDATE subscriptions SET card_id = ?, name = ?, monthly_cost_cents = ?, is_trial = ?, "
+            "deadline = ?, reminder_time = ?, source_type = ?, source_value = ? "
+            + (", last_reminded_days = NULL " if reset_reminders else "")
+            + "WHERE id = ?",
+            (fields["card_id"], fields["name"], fields["monthly_cost_cents"], fields["is_trial"],
+             fields["deadline"], fields["reminder_time"], fields["source_type"], fields["source_value"], sub_id),
+        )
+    return get_subscription(sub_id)

@@ -131,7 +131,7 @@ function needsAttentionHtml(state) {
           <li class="row-in attention-item" data-sub-id="${sub.id}">
             <div class="flex items-start justify-between gap-4">
               <div class="min-w-0">
-                <p class="font-medium truncate">${escapeHtml(sub.name)}</p>
+                <a href="#details/${sub.id}" class="font-medium truncate block">${escapeHtml(sub.name)}</a>
                 <p class="text-sm text-graphite mt-0.5">${escapeHtml(cardName(sub.card_id))} · ${formatMoney(sub.monthly_cost_cents)} a month</p>
               </div>
               <span class="due-pill">${dueText(daysLeft(sub.deadline))}</span>
@@ -183,7 +183,8 @@ function wireNeedsAttention(root, state) {
 function rowHtml(sub) {
   const days = daysLeft(sub.deadline);
   return `
-    <li class="row-in flex items-center justify-between py-4 border-t border-line">
+    <li class="row-in border-t border-line">
+      <a href="#details/${sub.id}" class="row-link flex items-center justify-between py-4">
       <div class="min-w-0">
         <p class="font-medium truncate">
           ${escapeHtml(sub.name)}
@@ -193,5 +194,6 @@ function rowHtml(sub) {
         <p class="text-sm text-graphite mt-0.5">${timeLeftText(days)} · ${days < 0 ? "Was due" : sub.is_trial ? "Ends" : "Renews"} ${formatDate(sub.deadline)}</p>
       </div>
       <p class="tabular-nums pl-4">${formatMoney(sub.monthly_cost_cents)}</p>
+      </a>
     </li>`;
 }
