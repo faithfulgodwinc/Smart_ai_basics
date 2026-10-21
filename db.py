@@ -3,13 +3,14 @@
 Every function opens the file, does one small job, and closes it again.
 """
 
+import os
 import sqlite3
 from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 
 HERE = Path(__file__).parent
-DB_PATH = HERE / "smart.db"
+DB_PATH = Path(os.getenv("SMART_DB", HERE / "smart.db"))  # SMART_DB lets tests use a separate file
 SCHEMA_PATH = HERE / "schema.sql"
 
 

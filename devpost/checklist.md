@@ -29,7 +29,7 @@ Build mode: learn
   Learner check: Start Smart, tap +, add "Spotify, 10.99, website link" on a new card called "Side card," giving your email when asked. You should see it under the Side card with 10.99 as the card total and the overall total. Stop and restart the server, reload — it's still there.
   Commit: `Add cards and subscriptions grouped by card with totals`
 
-- [ ] **3. Swipe between cards and see what each one is carrying**
+- [x] **3. Swipe between cards and see what each one is carrying**
   Becomes usable: With two or more cards, Home shows a snapping card carousel; swiping changes the list below to that card's subscriptions. Cards look like real polished cards (sheen, texture, decorative network marks). Rows show "Trial" labels with trials first, time left (days, or months when far off), and the renewal date.
   Why now: Seeing "main card vs side card" side by side is the heart of the kernel, and the card look is the visual centerpiece — a good moment for your early feedback while there's still plenty of build left to adjust.
   PRD ref: `prd.md > The Core Journey` (step 5), `prd.md > Cards`, `prd.md > Adding and Editing Subscriptions` (row content and ordering), `prd.md > Look and Feel`
@@ -81,7 +81,7 @@ Build mode: learn
 
 ## Hands-on Checkpoints
 
-- [ ] Early usable behavior explored — after slice 3 (two cards, swiping, the card look), so feedback on the feel can shape the rest
+- [x] Early usable behavior explored — after slice 3 (two cards, swiping, the card look), so feedback on the feel can shape the rest. Feedback: loved the look; asked for a reminder time so a live demo can show an email arriving on its own (see Revisions).
 - [ ] Final kick-the-tires exploration and feedback completed
 
 ## Final Review

@@ -1,0 +1,16 @@
+<!-- Decorative card-network marks. Abstract shapes only: Smart has no card number, so it never claims a real network. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 92 24" width="92" height="24" fill="none">
+  <!-- two overlapping rings -->
+  <circle cx="9" cy="12" r="8" fill="#FAFAF9" fill-opacity="0.22"/>
+  <circle cx="19" cy="12" r="8" fill="#FAFAF9" fill-opacity="0.38"/>
+  <!-- stacked bars -->
+  <rect x="36" y="6" width="16" height="3" rx="1.5" fill="#FAFAF9" fill-opacity="0.5"/>
+  <rect x="36" y="10.5" width="12" height="3" rx="1.5" fill="#FAFAF9" fill-opacity="0.35"/>
+  <rect x="36" y="15" width="8" height="3" rx="1.5" fill="#FAFAF9" fill-opacity="0.22"/>
+  <!-- contactless waves -->
+  <path d="M66 7.5c2 2.8 2 6.2 0 9" stroke="#FAFAF9" stroke-opacity="0.55" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M71 5c3.2 4.3 3.2 9.7 0 14" stroke="#FAFAF9" stroke-opacity="0.45" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M76 2.8c4.4 5.8 4.4 12.6 0 18.4" stroke="#FAFAF9" stroke-opacity="0.32" stroke-width="1.6" stroke-linecap="round"/>
+  <!-- diamond -->
+  <rect x="84" y="8" width="8" height="8" rx="1.5" transform="rotate(45 88 12)" fill="#FAFAF9" fill-opacity="0.3"/>
+</svg>
