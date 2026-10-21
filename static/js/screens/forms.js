@@ -4,7 +4,7 @@
 import * as api from "../api.js";
 import { ApiError } from "../api.js";
 import {
-  allTimeZones, cleanMoney, detectedTimeZone, escapeHtml, reminderAtText, setTimeZone, timeZoneLabel,
+  allTimeZones, cleanMoney, detectedTimeZone, escapeHtml, todayIso, reminderAtText, setTimeZone, timeZoneLabel,
 } from "../format.js";
 import { toast } from "../toast.js";
 
@@ -78,6 +78,7 @@ export function renderSubscriptionForm(root, state, subId = null) {
     root.querySelector('[for="deadline"]').textContent = inputs.is_trial.checked ? "Trial ends" : "Next billing date";
   };
   inputs.is_trial.addEventListener("change", showTrialLabel);
+  inputs.deadline.min = todayIso(); // the date picker greys out days before today
 
   // Only numbers in the price: anything else is removed as you type or paste.
   inputs.monthly_cost.addEventListener("input", () => {
@@ -146,6 +147,8 @@ export function renderSubscriptionForm(root, state, subId = null) {
 
     clearErrors(root);
     const errors = { ...checkSubscription(values), ...checkSettings(settings) };
+    const keptOldDate = editing && values.deadline === editing.deadline;
+    if (values.deadline && !keptOldDate && values.deadline < todayIso()) errors.deadline = "Pick today or a later date.";
     if (showErrors(root, errors)) return;
 
     const button = form.querySelector('[type="submit"]');
@@ -273,7 +276,7 @@ export function openRenewSheet(sub, state, onRenewed) {
     <h2 class="text-2xl font-semibold tracking-tight">${escapeHtml(sub.name)} renewed</h2>
     <p class="mt-2 text-sm text-graphite">When is the next billing date? Smart will remind you before it, at ${escapeHtml(sub.reminder_time)}.</p>
     <form novalidate class="mt-6 space-y-5">
-      ${field("deadline", "Next billing date", `<input id="deadline" name="deadline" type="date" class="field-input">`)}
+      ${field("deadline", "Next billing date", `<input id="deadline" name="deadline" type="date" min="${todayIso()}" class="field-input">`)}
       <p class="field-error" data-error-for="form"></p>
       <button type="submit" class="btn-primary">Save</button>
       <button type="button" data-close class="w-full py-3 text-graphite">Cancel</button>
@@ -284,7 +287,8 @@ export function openRenewSheet(sub, state, onRenewed) {
     event.preventDefault();
     const deadline = form.elements.deadline.value;
     clearErrors(sheet);
-    if (showErrors(sheet, deadline ? {} : { deadline: "Pick a date." })) return;
+    const dateError = !deadline ? "Pick a date." : deadline < todayIso() ? "Pick today or a later date." : null;
+    if (showErrors(sheet, dateError ? { deadline: dateError } : {})) return;
     try {
       const result = await api.renewSubscription(sub.id, deadline);
       close();

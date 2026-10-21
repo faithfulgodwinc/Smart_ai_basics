@@ -105,6 +105,12 @@ def valid_source(body):
     raise InvalidInput("source_type", "Choose website or app.")
 
 
+def not_in_the_past(deadline):
+    """A billing date can't be before today (in the person's time zone)."""
+    if deadline < reminders.local_now().date().isoformat():
+        raise InvalidInput("deadline", "Pick today or a later date.")
+
+
 def subscription_fields(body):
     source_type, source_value = valid_source(body)
     return {
@@ -177,6 +183,7 @@ def post_subscription():
     if not db.get_time_zone():
         raise InvalidInput("time_zone", "Choose the time zone your reminders should follow.")
     fields = subscription_fields(request.get_json(silent=True) or {})
+    not_in_the_past(fields["deadline"])
     subscription = db.insert_subscription(fields)
     result = reminders.check_one(subscription["id"])  # sends it now if it's already due
     return jsonify(subscription=db.get_subscription(subscription["id"]), **result), 201
@@ -201,8 +208,7 @@ def cancel_subscription(sub_id):
 def renew_subscription(sub_id):
     existing_subscription(sub_id)
     deadline = valid_date(request.get_json(silent=True) or {})
-    if deadline < reminders.local_now().date().isoformat():
-        raise InvalidInput("deadline", "Pick the next billing date: today or later.")
+    not_in_the_past(deadline)
     db.renew(sub_id, deadline)
     result = reminders.check_one(sub_id)  # reminders continue for the new date
     return jsonify(subscription=db.get_subscription(sub_id), **result)
@@ -213,6 +219,8 @@ def renew_subscription(sub_id):
 def put_subscription(sub_id):
     before = existing_subscription(sub_id)
     fields = subscription_fields(request.get_json(silent=True) or {})
+    if fields["deadline"] != before["deadline"]:
+        not_in_the_past(fields["deadline"])  # keeping an old date while fixing a typo is fine
     # A new date or time means new reminders, so forget which ones were already sent.
     reset = (fields["deadline"], fields["reminder_time"]) != (before["deadline"], before["reminder_time"])
     db.update_subscription(sub_id, fields, reset_reminders=reset)

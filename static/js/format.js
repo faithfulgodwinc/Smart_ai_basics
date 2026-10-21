@@ -112,3 +112,9 @@ export function cleanMoney(text) {
   const [whole, ...rest] = String(text).replace(/[^\d.]/g, "").split(".");
   return rest.length ? `${whole}.${rest.join("").slice(0, 2)}` : whole;
 }
+
+// Today as 'YYYY-MM-DD' in the chosen time zone (for the "not before today" rule).
+export function todayIso(today = todayInTimeZone()) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+}
