@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Smart</title>
+  <meta name="theme-color" content="#FFFFFF">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.18"></script>
+  <style type="text/tailwindcss">
+    @theme {
+      /* Turn off Tailwind's colorful default palette so nothing colorful slips in. */
+      --color-*: initial;
+      --color-paper: #FFFFFF;
+      --color-mist: #F5F5F4;
+      --color-line: #E7E5E4;
+      --color-graphite: #6B6B6B;
+      --color-ink: #0A0A0A;
+      --color-white: #FFFFFF;
+      --color-transparent: transparent;
+
+      --font-sans: -apple-system, "SF Pro Text", Inter, system-ui, sans-serif;
+    }
+  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="bg-paper text-ink font-sans antialiased">
+  <div class="mx-auto min-h-dvh max-w-[440px] px-6 pb-40">
+    <!-- One container per screen. app.js shows one and hides the rest. -->
+    <section id="home" class="screen" hidden></section>
+    <section id="add" class="screen" hidden></section>
+  </div>
+
+  <!-- Sheet that slides up over a screen (the card form). -->
+  <div id="sheet-backdrop" class="sheet-backdrop" hidden></div>
+  <div id="sheet" class="sheet" hidden></div>
+
+  <!-- Floating vertical nav, bottom right. -->
+  <nav class="floating-nav" aria-label="Main">
+    <a href="#home" class="nav-item" aria-label="Home">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-4.5v-6h-5v6H5a1 1 0 0 1-1-1z"/></svg>
+    </a>
+    <a href="#add" class="nav-item nav-add" aria-label="Add a subscription">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </a>
+  </nav>
+
+  <script type="module" src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

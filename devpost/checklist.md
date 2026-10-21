@@ -19,7 +19,7 @@ Build mode: learn
   Learner check: Put your Gmail address and app password in `.env`, run `python send_test_email.py your@email`, then open Gmail: you should see "Netflix renews today…" with the cancel link and a black "Open Smart" button. Tell me how the email looks and reads.
   Commit: `Send a real reminder email through Gmail SMTP`
 
-- [ ] **2. Add a card and a subscription, and see it sitting under that card**
+- [x] **2. Add a card and a subscription, and see it sitting under that card**
   Becomes usable: Running `python app.py` and opening `http://localhost:5000` shows Home with the vertical floating nav. Tapping + opens the subscription form; you can create a card from inside it ("New card…") without losing what you typed, give your reminder email the first time, and save. The subscription appears under its card with the card's monthly total and the overall total. Everything is still there after restarting the server.
   Why now: This is the unique kernel — which card is exposed — so it comes right after the risky email check. It also brings up the whole app shape (Flask, SQLite, page shell, black-and-white theme) that every later slice builds on.
   PRD ref: `prd.md > The Core Journey` (steps 2–4), `prd.md > Cards`, `prd.md > Adding and Editing Subscriptions`, `prd.md > Monthly Totals`, `prd.md > States and Boundaries`
