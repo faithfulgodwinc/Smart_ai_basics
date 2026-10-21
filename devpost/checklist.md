@@ -86,6 +86,8 @@ Build mode: learn
 
 ## Final Review
 
+- [ ] Monthly cost field only accepts numbers as you type (digits and one decimal point, max 2 decimals) — learner found letters could be typed
+- Website link: learner reviewed and chose to keep requiring the full https:// link (copied from the browser) to avoid wrong websites — no change
 - [ ] Final review complete — feedback resolved and learner confirms ready to ship
 
 ## Code Tour and App Map

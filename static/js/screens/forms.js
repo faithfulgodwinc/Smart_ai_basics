@@ -4,7 +4,7 @@
 import * as api from "../api.js";
 import { ApiError } from "../api.js";
 import {
-  allTimeZones, detectedTimeZone, escapeHtml, reminderAtText, setTimeZone, timeZoneLabel,
+  allTimeZones, cleanMoney, detectedTimeZone, escapeHtml, reminderAtText, setTimeZone, timeZoneLabel,
 } from "../format.js";
 import { toast } from "../toast.js";
 
@@ -78,6 +78,12 @@ export function renderSubscriptionForm(root, state, subId = null) {
     root.querySelector('[for="deadline"]').textContent = inputs.is_trial.checked ? "Trial ends" : "Next billing date";
   };
   inputs.is_trial.addEventListener("change", showTrialLabel);
+
+  // Only numbers in the price: anything else is removed as you type or paste.
+  inputs.monthly_cost.addEventListener("input", () => {
+    const cleaned = cleanMoney(inputs.monthly_cost.value);
+    if (cleaned !== inputs.monthly_cost.value) inputs.monthly_cost.value = cleaned;
+  });
 
   const chooseSource = (type, keepValue = false) => {
     sourceType = type;

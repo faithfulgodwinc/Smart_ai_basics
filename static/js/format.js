@@ -105,3 +105,10 @@ export function escapeHtml(text) {
 export function needsAttention(sub, today = todayInTimeZone()) {
   return isActive(sub) && daysLeft(sub.deadline, today) <= 2;
 }
+
+// Keeps only what a price can contain: digits and one decimal point, at most 2 decimals.
+// "$1,299.999abc" -> "1299.99"
+export function cleanMoney(text) {
+  const [whole, ...rest] = String(text).replace(/[^\d.]/g, "").split(".");
+  return rest.length ? `${whole}.${rest.join("").slice(0, 2)}` : whole;
+}
