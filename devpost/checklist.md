@@ -49,7 +49,7 @@ Build mode: learn
   Learner check: In Smart, add "Netflix, free trial, expires today" with its plans link and "Remind me at" set two minutes from now. You should see "Reminder set for …". Leave Smart alone; at that time the email should arrive in Gmail with the Netflix link. Restart the server — no second email.
   Commit: `Send reminders at their chosen time and watch deadlines every minute`
 
-- [ ] **5. "Have you cancelled this?" — cancel it or say it renewed**
+- [x] **5. "Have you cancelled this?" — cancel it or say it renewed**
   Becomes usable: Anything due within 2 days or past due rises into a "Needs attention" section at the top of Home. "Yes, cancelled" removes it from the active list and the card and overall totals drop. "It renewed" asks for the next billing date; it goes back to active with the new date and reminders resume for it.
   Why now: This closes the core loop — reminder → act → totals drop — which is the success moment of the demo.
   PRD ref: `prd.md > In-App Reminder and the "Needs Check" Loop`, `prd.md > Monthly Totals`

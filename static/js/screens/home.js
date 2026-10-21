@@ -1,9 +1,13 @@
-// Home: the card carousel, the visible card's subscriptions, and the overall monthly total.
+// Home: anything needing attention, the card carousel, the visible card's subscriptions,
+// and the overall monthly total.
 
+import * as api from "../api.js";
 import {
   cardSubscriptions, cardTotal, daysLeft, escapeHtml, formatDate, formatMoney,
-  overallTotal, sortSubscriptions, timeLeftText,
+  needsAttention, overallTotal, sortSubscriptions, timeLeftText,
 } from "../format.js";
+import { openRenewSheet } from "./forms.js";
+import { toast } from "../toast.js";
 
 let cardObserver = null;
 
@@ -27,6 +31,7 @@ export function renderHome(root, state) {
 
   root.innerHTML = `
     ${topBar()}
+    ${needsAttentionHtml(state)}
     <div class="card-carousel" aria-label="Your cards">
       ${state.cards.map((card, index) => cardHtml(card, index, cardTotal(state.subscriptions, card.id))).join("")}
     </div>
@@ -59,6 +64,8 @@ export function renderHome(root, state) {
     }
   }, { root: carousel, threshold: 0.6 });
   for (const slide of carousel.children) cardObserver.observe(slide);
+
+  wireNeedsAttention(root, state);
 
   for (const dot of root.querySelectorAll(".card-dots button")) {
     dot.addEventListener("click", () => {
@@ -110,6 +117,69 @@ function cardHtml(card, index, totalCents) {
     </article>`;
 }
 
+// --- Needs attention: "Have you cancelled this?" -----------------------------
+
+function needsAttentionHtml(state) {
+  const subs = sortSubscriptions(state.subscriptions.filter((sub) => needsAttention(sub)));
+  if (!subs.length) return "";
+  const cardName = (id) => state.cards.find((card) => card.id === id)?.nickname || "";
+  return `
+    <section class="mb-10" aria-label="Needs attention">
+      <h2 class="text-sm text-graphite mb-3">Needs attention</h2>
+      <ul class="space-y-3">
+        ${subs.map((sub) => `
+          <li class="row-in attention-item" data-sub-id="${sub.id}">
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <p class="font-medium truncate">${escapeHtml(sub.name)}</p>
+                <p class="text-sm text-graphite mt-0.5">${escapeHtml(cardName(sub.card_id))} · ${formatMoney(sub.monthly_cost_cents)} a month</p>
+              </div>
+              <span class="due-pill">${dueText(daysLeft(sub.deadline))}</span>
+            </div>
+            <p class="mt-4 text-[15px]">Have you cancelled this?</p>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <button type="button" data-action="cancel" class="btn-small btn-small--ink">Yes, cancelled</button>
+              <button type="button" data-action="renew" class="btn-small">It renewed</button>
+            </div>
+          </li>`).join("")}
+      </ul>
+    </section>`;
+}
+
+function dueText(days) {
+  if (days < 0) return "Past due";
+  if (days === 0) return "Due today";
+  if (days === 1) return "Due tomorrow";
+  return "In 2 days";
+}
+
+function wireNeedsAttention(root, state) {
+  const replace = (updated) => {
+    state.subscriptions = state.subscriptions.map((sub) => (sub.id === updated.id ? updated : sub));
+    renderHome(root, state);
+  };
+
+  for (const item of root.querySelectorAll(".attention-item")) {
+    const sub = state.subscriptions.find((s) => s.id === Number(item.dataset.subId));
+
+    const cancelButton = item.querySelector('[data-action="cancel"]');
+    cancelButton.addEventListener("click", async () => {
+      cancelButton.disabled = true;
+      try {
+        replace(await api.cancelSubscription(sub.id));
+        toast(`${sub.name} cancelled. You're way ahead.`);
+      } catch (error) {
+        cancelButton.disabled = false;
+        toast(error.message);
+      }
+    });
+
+    item.querySelector('[data-action="renew"]').addEventListener("click", () => {
+      openRenewSheet(sub, state, (updated) => replace(updated));
+    });
+  }
+}
+
 function rowHtml(sub) {
   const days = daysLeft(sub.deadline);
   return `
@@ -118,8 +188,9 @@ function rowHtml(sub) {
         <p class="font-medium truncate">
           ${escapeHtml(sub.name)}
           ${sub.is_trial ? `<span class="trial-label">Trial</span>` : ""}
+          ${needsAttention(sub) ? `<span class="trial-label trial-label--ink">Due soon</span>` : ""}
         </p>
-        <p class="text-sm text-graphite mt-0.5">${timeLeftText(days)} · ${sub.is_trial ? "Ends" : "Renews"} ${formatDate(sub.deadline)}</p>
+        <p class="text-sm text-graphite mt-0.5">${timeLeftText(days)} · ${days < 0 ? "Was due" : sub.is_trial ? "Ends" : "Renews"} ${formatDate(sub.deadline)}</p>
       </div>
       <p class="tabular-nums pl-4">${formatMoney(sub.monthly_cost_cents)}</p>
     </li>`;

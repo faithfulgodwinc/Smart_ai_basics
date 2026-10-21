@@ -172,6 +172,32 @@ def post_subscription():
     return jsonify(subscription=db.get_subscription(subscription["id"]), **result), 201
 
 
+
+def existing_subscription(sub_id):
+    subscription = db.get_subscription(sub_id)
+    if not subscription:
+        raise InvalidInput("form", "That subscription doesn't exist anymore.")
+    return subscription
+
+
+@app.post("/api/subscriptions/<int:sub_id>/cancel")
+def cancel_subscription(sub_id):
+    existing_subscription(sub_id)
+    today = reminders.local_now().date().isoformat()
+    return jsonify(db.mark_cancelled(sub_id, today))
+
+
+@app.post("/api/subscriptions/<int:sub_id>/renew")
+def renew_subscription(sub_id):
+    existing_subscription(sub_id)
+    deadline = valid_date(request.get_json(silent=True) or {})
+    if deadline < reminders.local_now().date().isoformat():
+        raise InvalidInput("deadline", "Pick the next billing date: today or later.")
+    db.renew(sub_id, deadline)
+    result = reminders.check_one(sub_id)  # reminders continue for the new date
+    return jsonify(subscription=db.get_subscription(sub_id), **result)
+
+
 db.init_db()
 
 if __name__ == "__main__":

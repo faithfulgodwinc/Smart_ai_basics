@@ -100,3 +100,8 @@ export function escapeHtml(text) {
     { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]
   ));
 }
+
+// Due within 2 days, or past its date, and still active: Smart asks "Have you cancelled this?"
+export function needsAttention(sub, today = todayInTimeZone()) {
+  return isActive(sub) && daysLeft(sub.deadline, today) <= 2;
+}

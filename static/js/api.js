@@ -21,7 +21,15 @@ async function request(method, path, body) {
   }
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new ApiError(data.error || "Something went wrong. Try again.", data.field);
+    // A 404/405 with no message means the running server is older than this page:
+    // it doesn't have this route yet. Restarting it loads the new code.
+    const outdated = !data.error && [404, 405].includes(response.status);
+    throw new ApiError(
+      data.error || (outdated
+        ? "Smart's server is running an older version. Restart it (Ctrl+C, then python app.py) and try again."
+        : "Something went wrong. Try again."),
+      data.field,
+    );
   }
   return data;
 }
@@ -30,3 +38,5 @@ export const getState = () => request("GET", "/api/state");
 export const saveSettings = (settings) => request("PUT", "/api/settings", settings);
 export const saveCard = (card) => request("POST", "/api/cards", card);
 export const saveSubscription = (sub) => request("POST", "/api/subscriptions", sub);
+export const cancelSubscription = (id) => request("POST", `/api/subscriptions/${id}/cancel`);
+export const renewSubscription = (id, deadline) => request("POST", `/api/subscriptions/${id}/renew`, { deadline });

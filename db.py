@@ -136,3 +136,23 @@ def mark_reminded(sub_id, days_before):
     """Remember which reminder was sent (2, 1 or 0 days before), so it's never sent twice."""
     with connect() as conn:
         conn.execute("UPDATE subscriptions SET last_reminded_days = ? WHERE id = ?", (days_before, sub_id))
+
+
+def mark_cancelled(sub_id, cancelled_on):
+    with connect() as conn:
+        conn.execute(
+            "UPDATE subscriptions SET status = 'cancelled', cancelled_on = ? WHERE id = ?",
+            (cancelled_on, sub_id),
+        )
+    return get_subscription(sub_id)
+
+
+def renew(sub_id, deadline):
+    """It renewed: new deadline, active again, and reminders start over for the new date."""
+    with connect() as conn:
+        conn.execute(
+            "UPDATE subscriptions SET deadline = ?, status = 'active', cancelled_on = NULL, "
+            "last_reminded_days = NULL WHERE id = ?",
+            (deadline, sub_id),
+        )
+    return get_subscription(sub_id)

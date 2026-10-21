@@ -177,7 +177,7 @@ export function checkSettings(settings) {
 }
 
 // What happened to the reminder when this subscription was saved.
-function reminderNote({ reminder, reminder_at: reminderAt }, email) {
+export function reminderNote({ reminder, reminder_at: reminderAt }, email) {
   if (reminder === "sent") return `Saved. Reminder sent to ${email}.`;
   if (reminder === "scheduled") return `Saved. Reminder set for ${reminderAtText(reminderAt)}, to ${email}.`;
   if (reminder === "failed") return "Saved. The reminder email couldn't be sent — check the email settings in .env.";
@@ -219,6 +219,38 @@ function openCardSheet({ onSaved, onClosed }) {
     try {
       onSaved(await api.saveCard(card));
       close();
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error;
+      showErrors(sheet, { [error.field || "form"]: error.message });
+    }
+  });
+}
+
+// --- Renew sheet: "It renewed" -> when is the next billing date? ----------------
+
+export function openRenewSheet(sub, state, onRenewed) {
+  const { sheet, close } = openSheet(`
+    <div class="mx-auto mb-6 h-1 w-10 rounded-full bg-line"></div>
+    <h2 class="text-2xl font-semibold tracking-tight">${escapeHtml(sub.name)} renewed</h2>
+    <p class="mt-2 text-sm text-graphite">When is the next billing date? Smart will remind you before it, at ${escapeHtml(sub.reminder_time)}.</p>
+    <form novalidate class="mt-6 space-y-5">
+      ${field("deadline", "Next billing date", `<input id="deadline" name="deadline" type="date" class="field-input">`)}
+      <p class="field-error" data-error-for="form"></p>
+      <button type="submit" class="btn-primary">Save</button>
+      <button type="button" data-close class="w-full py-3 text-graphite">Cancel</button>
+    </form>`);
+
+  const form = sheet.querySelector("form");
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const deadline = form.elements.deadline.value;
+    clearErrors(sheet);
+    if (showErrors(sheet, deadline ? {} : { deadline: "Pick a date." })) return;
+    try {
+      const result = await api.renewSubscription(sub.id, deadline);
+      close();
+      onRenewed(result.subscription);
+      toast(reminderNote(result, state.email).replace("Saved.", `${sub.name} is active again.`));
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
       showErrors(sheet, { [error.field || "form"]: error.message });

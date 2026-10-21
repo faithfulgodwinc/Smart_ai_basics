@@ -214,3 +214,11 @@
   z-index: 60;
 }
 .toast.is-shown { opacity: 1; transform: translate(-50%, 0); }
+
+/* --- Needs attention ---------------------------------------------------- */
+.attention-item { background: var(--mist); border-radius: 20px; padding: 18px; }
+.due-pill { flex: none; background: var(--ink); color: var(--paper); border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 500; }
+.trial-label--ink { background: var(--ink); color: var(--paper); }
+.btn-small { border: 1px solid var(--ink); border-radius: 999px; padding: 10px 12px; font-size: 14px; font-weight: 500; background: var(--paper); transition: opacity 200ms var(--ease); }
+.btn-small--ink { background: var(--ink); color: var(--paper); }
+.btn-small:disabled { opacity: 0.5; }
