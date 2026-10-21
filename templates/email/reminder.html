@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<body style="margin:0; padding:0; background:#FFFFFF;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#FFFFFF;">
+    <tr>
+      <td align="center" style="padding:48px 24px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px; font-family:-apple-system, 'SF Pro Text', Inter, 'Segoe UI', Helvetica, Arial, sans-serif; color:#0A0A0A;">
+          <tr>
+            <td style="font-size:13px; letter-spacing:0.08em; text-transform:uppercase; color:#6B6B6B; padding-bottom:32px;">Smart</td>
+          </tr>
+          <tr>
+            <td style="font-size:28px; font-weight:600; letter-spacing:-0.02em; line-height:1.2; padding-bottom:12px;">{{ name }} renews {{ when }}.</td>
+          </tr>
+          <tr>
+            <td style="font-size:16px; line-height:1.6; color:#6B6B6B; padding-bottom:32px;">{{ cost }} a month, charged to {{ card }}.</td>
+          </tr>
+          <tr>
+            <td style="border-top:1px solid #E7E5E4; padding:24px 0 32px 0; font-size:16px; line-height:1.6;">
+              <div style="font-weight:600; padding-bottom:4px;">Don't want it?</div>
+              {% if source_type == "website" %}
+              <a href="{{ source_value }}" style="color:#0A0A0A; text-decoration:underline; word-break:break-all;">Cancel on the {{ name }} website</a>
+              {% else %}
+              Open the <strong>{{ source_value }}</strong> app and cancel your subscription there.
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding-bottom:40px;">
+              <a href="{{ app_url }}" style="display:inline-block; background:#0A0A0A; color:#FFFFFF; text-decoration:none; font-size:15px; font-weight:500; padding:14px 28px; border-radius:999px;">Open Smart</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="font-size:13px; color:#6B6B6B;">Be way ahead.</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{{ name }} renews {{ when }}.
+
+{{ cost }} a month, charged to {{ card }}.
+
+Don't want it?
+{% if source_type == "website" %}Cancel here: {{ source_value }}{% else %}Open the {{ source_value }} app and cancel your subscription there.{% endif %}
+
+Already sorted it? Let Smart know: {{ app_url }}
+
+Smart — Be way ahead.

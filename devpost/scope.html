@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tracker Scope</title>
+<style>
+  :root {
+    --bg: #f7f8f6;
+    --surface: #ffffff;
+    --ink: #1d2320;
+    --muted: #66706b;
+    --line: #e3e7e4;
+    --accent: #3f7d6b;
+    --accent-soft: #e6f0ec;
+    --main: #3f7d6b;
+    --side: #7a8fb0;
+    --warn: #b0705a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121614; --surface: #1a201d; --ink: #e8ece9; --muted: #9aa49f;
+      --line: #2a322e; --accent: #7cc0a9; --accent-soft: #1f2e28;
+      --main: #7cc0a9; --side: #9fb2d2; --warn: #d79a84;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121614; --surface: #1a201d; --ink: #e8ece9; --muted: #9aa49f;
+    --line: #2a322e; --accent: #7cc0a9; --accent-soft: #1f2e28;
+    --main: #7cc0a9; --side: #9fb2d2; --warn: #d79a84;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 56px 16px 80px; }
+  .eyebrow { color: var(--muted); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 8px; }
+  h1 { font-size: clamp(28px, 6vw, 40px); line-height: 1.15; font-weight: 600; margin: 0 0 12px; letter-spacing: -.02em; }
+  .lede { font-size: 18px; color: var(--muted); margin: 0 0 40px; }
+  .badge { display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); margin-bottom: 20px; }
+  section { margin: 0 0 40px; }
+  h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 0 0 12px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 24px; }
+  .kernel { border-color: transparent; background: var(--accent-soft); }
+  .kernel p { margin: 0; font-size: 19px; }
+  .kernel strong { color: var(--accent); }
+  p { margin: 0 0 12px; }
+  p:last-child { margin-bottom: 0; }
+  ul { margin: 0; padding-left: 20px; }
+  li { margin: 4px 0; }
+  .diagram svg { width: 100%; height: auto; display: block; }
+  .diagram text { fill: var(--ink); font: 13px -apple-system, "Segoe UI", system-ui, sans-serif; }
+  .diagram .sub { fill: var(--muted); font-size: 11.5px; }
+  .diagram .node { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+  .diagram .node.hi { stroke: var(--accent); }
+  .diagram .arrow { stroke: var(--muted); stroke-width: 1.5; fill: none; marker-end: url(#a); }
+  .diagram .loop { stroke: var(--accent); stroke-dasharray: 4 4; }
+  .caption { color: var(--muted); font-size: 14px; margin-top: 12px; }
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+  .acct { border-radius: 14px; padding: 14px 16px; border: 1px solid var(--line); background: var(--bg); }
+  .acct h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .acct p { color: var(--muted); font-size: 14px; }
+  details { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; margin-bottom: 10px; }
+  summary { cursor: pointer; padding: 16px 20px; font-weight: 600; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--muted); font-weight: 400; font-size: 20px; }
+  details[open] summary::after { content: "–"; }
+  details > div { padding: 0 20px 18px; }
+  .tag { font-size: 12px; font-weight: 500; padding: 2px 9px; border-radius: 99px; margin-left: 8px; }
+  .t-now { background: var(--accent-soft); color: var(--accent); }
+  .t-later { background: color-mix(in srgb, var(--side) 18%, transparent); color: var(--side); }
+  .t-cut { background: color-mix(in srgb, var(--warn) 16%, transparent); color: var(--warn); }
+  blockquote { margin: 0; padding-left: 16px; border-left: 2px solid var(--accent); color: var(--ink); }
+  .foot { color: var(--muted); font-size: 13px; text-align: center; margin-top: 48px; }
+  @media (max-width: 520px) { .cards { grid-template-columns: 1fr; } .card { padding: 20px; } }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">Scope · Build With AI: Basics</p>
+  <span class="badge">Approved</span>
+  <h1>Subscription &amp; Trial Tracker</h1>
+  <p class="lede">A calm, secure-feeling place to log your free trials and subscriptions, see which card each one is charging, and get reminded <em>before</em> you're billed, with a clear path to cancel. <span style="opacity:.7">(Name to be decided.)</span></p>
+
+  <section>
+    <h2>The unique kernel</h2>
+    <div class="card kernel">
+      <p>It tracks <strong>which card is exposed</strong>, not only when you'll be charged. Each subscription carries its own cancel route, so acting on a reminder takes one tap.</p>
+    </div>
+    <div class="cards">
+      <div class="acct"><h3><span class="dot" style="background:var(--main)"></span>Main account</h3><p>The one you protect. You should see right away what's sitting on it.</p></div>
+      <div class="acct"><h3><span class="dot" style="background:var(--side)"></span>Side account</h3><p>The one you top up and pay online from.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The core loop</h2>
+    <div class="card diagram">
+      <svg viewBox="0 0 640 400" role="img" aria-label="Core loop: add a trial, it is grouped by card with totals, a reminder arrives before the deadline, you follow the cancel route, mark it cancelled, totals drop, and you come back for the next trial. If the deadline passes unmarked, the app asks whether you cancelled or it renewed; renewed subscriptions ask you for the next billing date and return to active.">
+        <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="var(--muted)"/></marker></defs>
+        <rect class="node" x="10" y="30" width="180" height="70" rx="16"/>
+        <text x="100" y="60" text-anchor="middle">Add a trial</text>
+        <text class="sub" x="100" y="80" text-anchor="middle">name · cost · end date · card · cancel route</text>
+
+        <rect class="node hi" x="230" y="30" width="180" height="70" rx="16"/>
+        <text x="320" y="60" text-anchor="middle">Grouped by card</text>
+        <text class="sub" x="320" y="80" text-anchor="middle">monthly totals: per card + overall</text>
+
+        <rect class="node hi" x="450" y="30" width="180" height="70" rx="16"/>
+        <text x="540" y="60" text-anchor="middle">Reminder arrives</text>
+        <text class="sub" x="540" y="80" text-anchor="middle">real email + in-app, before the day</text>
+
+        <rect class="node" x="450" y="190" width="180" height="70" rx="16"/>
+        <text x="540" y="220" text-anchor="middle">Follow cancel route</text>
+        <text class="sub" x="540" y="240" text-anchor="middle">link or your own steps</text>
+
+        <rect class="node" x="230" y="190" width="180" height="70" rx="16"/>
+        <text x="320" y="220" text-anchor="middle">Mark as cancelled</text>
+        <text class="sub" x="320" y="240" text-anchor="middle">totals drop</text>
+
+        <rect class="node" x="10" y="190" width="180" height="70" rx="16"/>
+        <text x="100" y="220" text-anchor="middle">Next new trial</text>
+        <text class="sub" x="100" y="240" text-anchor="middle">why they come back</text>
+
+        <path class="arrow" d="M190 65 H226"/>
+        <path class="arrow" d="M410 65 H446"/>
+        <path class="arrow" d="M540 100 V186"/>
+        <path class="arrow" d="M450 225 H414"/>
+        <path class="arrow" d="M230 225 H194"/>
+        <path class="arrow loop" d="M100 190 V104"/>
+
+        <rect class="node hi" x="230" y="310" width="400" height="70" rx="16"/>
+        <text x="430" y="340" text-anchor="middle">Date passed, nothing marked? “Did you cancel or renew?”</text>
+        <text class="sub" x="430" y="360" text-anchor="middle">renewed → you enter the next billing date, reminders continue</text>
+        <path class="arrow" d="M540 260 V306"/>
+        <path class="arrow loop" d="M230 345 H212 V90 H226"/>
+      </svg>
+      <p class="caption">Highlighted steps are where the kernel shows up: the card grouping, reminders that point straight to the cancel route, and the renewal check that keeps watching after a deadline passes.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Who it's for</h2>
+    <div class="card">
+      <p>Young people who sign up for free trials and then forget: students, friends and family, early-career people, and young business owners trying out apps who are “too busy, and then they forget.” Many, like you, keep a protected main account and pay online from a side account.</p>
+      <p>Today they find out from a bank alert, sometimes months late.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>What “working” looks like</h2>
+    <div class="card">
+      <p>In a one-minute demo: add a few subscriptions across two cards, see them grouped with monthly totals per card and overall, then <strong>a real reminder email arrives</strong> (and an in-app reminder shows) with clear cancel directions, like “Google Pay → Payments &amp; subscriptions → Cancel.” Mark one cancelled, and the totals go down.</p>
+      <p>Nobody can wait days on camera, so a reminder can be fired on demand for the demo.</p>
+      <blockquote>“Something very presentable and something that works totally.”</blockquote>
+    </div>
+  </section>
+
+  <section>
+    <h2>Inspiration &amp; identity</h2>
+    <div class="card">
+      <ul>
+        <li>Opening it feels like entering “a whole world of comfort, security, and calmness.”</li>
+        <li>Apple design principles: white space, neat, friendly, calm.</li>
+        <li>Samsung Health's soft feel, with a restrained palette instead of “too many colors.”</li>
+        <li>Never “very coded or heavy,” never AI-generated or generic.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Why it matters to you</h2>
+    <div class="card">
+      <p>Surprise charges landed on the main account you protect, and Netflix billed you for months unnoticed. You also want to own the code: “what powers what,” especially how sending emails works.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>The boundary</h2>
+    <details open>
+      <summary><span>Now <span class="tag t-now">proof of concept</span></span></summary>
+      <div><ul>
+        <li>Manual entry: name, cost, trial end date, card, cancel link and/or your own steps</li>
+        <li>Grouped by card, with projected monthly totals per card and overall</li>
+        <li>Real reminder emails before the deadline, plus an in-app reminder</li>
+        <li>Mark as cancelled, which updates the totals</li>
+        <li>Deadline passed unmarked → “needs check”: “Did you cancel, or did it renew?” Renewed → you enter the next billing date, then it's active again with reminders continuing</li>
+        <li>Fire a reminder on demand for the demo</li>
+      </ul></div>
+    </details>
+    <details>
+      <summary><span>Later <span class="tag t-later">worth doing</span></span></summary>
+      <div><ul>
+        <li>Bank statement upload to detect subscriptions automatically (reading messy statements accurately is a project of its own)</li>
+        <li>Built-in cancel guides for common services (Netflix, Claude, Google Pay…)</li>
+        <li>Market-ready polish for wider use</li>
+      </ul></div>
+    </details>
+    <details>
+      <summary><span>Cut <span class="tag t-cut">with reason</span></span></summary>
+      <div><ul>
+        <li><strong>Truly automatic cancelling or card switching.</strong> It would need access to each company's systems, which most don't offer. Here, “click to cancel” opens the right page or shows the right steps.</li>
+      </ul></div>
+    </details>
+  </section>
+
+  <p class="foot">The Markdown version, devpost/scope.md, is the source of truth. This page is a companion view.</p>
+</main>
+</body>
+</html>

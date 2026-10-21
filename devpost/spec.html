@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart — Technical Blueprint</title>
+<style>
+:root{--bg:#fff;--ink:#0a0a0a;--soft:#6b6b6b;--line:#e8e8e8;--panel:#f6f6f6;--card:#0a0a0a;--cardInk:#fff;--dim:#cfcfcf}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b0b0b;--ink:#f4f4f4;--soft:#9a9a9a;--line:#262626;--panel:#141414;--card:#f4f4f4;--cardInk:#0a0a0a;--dim:#3a3a3a}}
+:root[data-theme="dark"]{--bg:#0b0b0b;--ink:#f4f4f4;--soft:#9a9a9a;--line:#262626;--panel:#141414;--card:#f4f4f4;--cardInk:#0a0a0a;--dim:#3a3a3a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Inter,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:880px;margin:0 auto;padding:56px 16px 96px}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--soft)}
+h1{font-size:clamp(40px,8vw,64px);letter-spacing:-.03em;margin:6px 0 0;line-height:1}
+.tag{font-size:20px;color:var(--soft);margin:10px 0 24px}
+h2{font-size:26px;letter-spacing:-.02em;margin:64px 0 8px}
+h3{margin:0 0 4px;font-size:19px}
+p.lead{color:var(--soft);margin:0 0 20px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--panel);padding:1px 6px;border-radius:6px}
+.panel{background:var(--panel);border-radius:20px;padding:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.three .panel h3{display:flex;align-items:center;gap:10px}
+.num{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--bg);font-size:14px;font-weight:600}
+svg text{font-family:inherit}
+#arch{width:100%;height:auto;display:block;margin-top:8px}
+#arch .node rect{fill:var(--bg);stroke:var(--ink);stroke-width:1.5;transition:fill .25s,stroke .25s}
+#arch .node text{fill:var(--ink);transition:fill .25s}
+#arch .node.on rect{fill:var(--ink)}
+#arch .node.on text{fill:var(--bg)}
+#arch .node.off rect{stroke:var(--dim)}
+#arch .node.off text{fill:var(--dim)}
+#arch .edge{stroke:var(--dim);stroke-width:1.5;fill:none;transition:stroke .25s}
+#arch .edge.on{stroke:var(--ink);stroke-width:2.5}
+#arch .node{cursor:pointer}
+.stepper{display:flex;align-items:center;gap:12px;margin:16px 0 8px}
+.stepper button{border:1px solid var(--line);background:var(--bg);color:var(--ink);width:40px;height:40px;border-radius:50%;font-size:18px;cursor:pointer}
+.stepper span{color:var(--soft);font-size:14px}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dots button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--soft);font-size:12px;cursor:pointer}
+.dots button[aria-current="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+#stepBody h3{margin-top:4px}
+.files{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.files code{background:var(--bg);border:1px solid var(--line)}
+.timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.tl{border-radius:16px;padding:16px;border:1px solid var(--line);background:var(--bg)}
+.tl b{display:block;font-size:22px;letter-spacing:-.02em}
+.tl small{color:var(--soft);display:block;line-height:1.4}
+.tl.fill{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tl.fill small{color:var(--bg);opacity:.75}
+@media (max-width:560px){.timeline{grid-template-columns:repeat(2,1fr)}}
+ol.smtp{counter-reset:s;list-style:none;padding:0;margin:12px 0 0}
+ol.smtp li{counter-increment:s;padding:10px 0 10px 44px;position:relative;border-top:1px solid var(--line)}
+ol.smtp li::before{content:counter(s);position:absolute;left:0;top:10px;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--ink);display:grid;place-items:center;font-size:13px;font-weight:600}
+details{border-top:1px solid var(--line);padding:14px 0}
+details:last-of-type{border-bottom:1px solid var(--line)}
+summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--soft);font-weight:400}
+details[open] summary::after{content:"–"}
+summary .ref{font-weight:400;color:var(--soft);font-size:13px}
+details p,details ul{margin:8px 0 0;color:var(--ink)}
+ul{padding-left:18px;margin:0}
+li{margin:4px 0}
+pre{background:var(--panel);border-radius:16px;padding:20px;overflow-x:auto;font:13px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;margin:0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--soft);font-weight:500}
+.tablewrap{overflow-x:auto}
+.who{display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--ink);border-radius:999px;padding:1px 8px;margin-right:6px}
+.who.c{border-color:var(--soft);color:var(--soft)}
+.dec li{margin:10px 0;list-style:none}
+.dec{padding:0}
+.foot{color:var(--soft);font-size:13px;margin-top:64px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="eyebrow">Technical blueprint · approved</div>
+<h1>Smart</h1>
+<p class="tag">Be way ahead. How it's built, and what powers what.</p>
+
+<p>A phone-first web app (HTML, CSS, JavaScript, Tailwind) talks to a small Python Flask server on your laptop. The server keeps everything in one database file, watches deadlines every hour, and sends real reminder emails through Gmail using SMTP.</p>
+
+<h2>The three parts</h2>
+<p class="lead">Tap a box in the diagram to see what it does.</p>
+
+<svg id="arch" viewBox="0 0 820 300" role="img" aria-label="Architecture: the browser app talks to the Flask server, which reads and writes smart.db and sends email through Gmail to your inbox">
+  <path class="edge" id="e-app-srv" d="M210 120 H300"/>
+  <path class="edge" id="e-srv-db" d="M430 190 V230"/>
+  <path class="edge" id="e-srv-gm" d="M560 120 H620"/>
+  <path class="edge" id="e-gm-in" d="M700 160 V220"/>
+  <g class="node" data-k="app" tabindex="0"><rect x="20" y="70" width="190" height="100" rx="18"/><text x="115" y="112" text-anchor="middle" font-size="17" font-weight="600">The app</text><text x="115" y="136" text-anchor="middle" font-size="12">browser · what you tap</text></g>
+  <g class="node" data-k="srv" tabindex="0"><rect x="300" y="50" width="260" height="140" rx="18"/><text x="430" y="100" text-anchor="middle" font-size="17" font-weight="600">The server</text><text x="430" y="124" text-anchor="middle" font-size="12">Python · Flask · on your laptop</text><text x="430" y="148" text-anchor="middle" font-size="12">routes · reminders · mailer</text></g>
+  <g class="node" data-k="db" tabindex="0"><rect x="340" y="230" width="180" height="56" rx="14"/><text x="430" y="263" text-anchor="middle" font-size="14" font-weight="600">smart.db</text></g>
+  <g class="node" data-k="gm" tabindex="0"><rect x="620" y="80" width="160" height="80" rx="18"/><text x="700" y="116" text-anchor="middle" font-size="16" font-weight="600">Gmail</text><text x="700" y="138" text-anchor="middle" font-size="12">smtp.gmail.com</text></g>
+  <g class="node" data-k="in" tabindex="0"><rect x="630" y="220" width="140" height="56" rx="14"/><text x="700" y="253" text-anchor="middle" font-size="14" font-weight="600">Your inbox</text></g>
+</svg>
+
+<div class="panel" id="archInfo" aria-live="polite"><h3>Pick a part</h3><p style="margin:0;color:var(--soft)">Each box is one piece of Smart.</p></div>
+
+<h2>Walk the journey</h2>
+<p class="lead">Your PRD's core journey, step by step, with the parts that are working and the files involved. Implements <code>prd.md › The Core Journey</code>.</p>
+<div class="dots" id="dots"></div>
+<div class="stepper"><button id="prev" aria-label="Previous step">‹</button><button id="next" aria-label="Next step">›</button><span id="count"></span></div>
+<div class="panel" id="stepBody" aria-live="polite"></div>
+
+<h2>The reminder rule</h2>
+<p class="lead">From <code>reminders.py</code>, which runs on every save and every hour. Implements <code>prd.md › Reminder Emails</code>.</p>
+<div class="timeline">
+  <div class="tl fill"><b>2 days</b><small>Email: "renews in 2 days"</small></div>
+  <div class="tl fill"><b>1 day</b><small>Email: "renews tomorrow"</small></div>
+  <div class="tl fill"><b>Today</b><small>Email only if just saved and nothing sent yet (the demo)</small></div>
+  <div class="tl"><b>Past</b><small>No email. Shows under <em>Needs attention</em> in the app</small></div>
+</div>
+<p style="margin-top:14px">Smart writes down which reminder it sent (<code>last_reminded_days</code>), so it never sends the same one twice. <b>Cancelled</b> stops reminders. <b>Renewed</b> clears that note so reminders start again for the new date.</p>
+
+<h2>How the email gets sent</h2>
+<p class="lead">This is what you said you want to learn. It all happens in <code>mailer.py</code>, using tools built into Python.</p>
+<div class="panel">
+<ol class="smtp">
+  <li><b>Find what's due.</b> <code>reminders.py</code> picks the subscriptions whose reminder is due today.</li>
+  <li><b>Write the email.</b> Fill in the template: name, "renews tomorrow," the cancel link or the app's name, and an <b>Open Smart</b> button.</li>
+  <li><b>Connect and log in.</b> Connect to <code>smtp.gmail.com:587</code>, then <code>starttls()</code> to switch to an encrypted connection, then log in with your app password, which is read from <code>.env</code>.</li>
+  <li><b>Hand it over.</b> <code>send_message()</code>: from you, to the reminder address. Gmail delivers it.</li>
+  <li><b>Remember it.</b> Mark it sent. If anything failed, it isn't marked, so the next hourly check tries again.</li>
+</ol>
+</div>
+
+<h2>Every PRD behavior has a home</h2>
+<p class="lead">Expand any of them to see the pieces and files.</p>
+<details><summary>Landing Page <span class="ref">landing.js · app.js</span></summary><p>Shown when the browser note <code>smart_seen_landing</code> is missing. The one button sets the note and goes to Home, so later visits open straight to Home.</p></details>
+<details><summary>Cards <span class="ref">home.js · forms.js · POST /api/cards</span></summary><ul><li>Nickname, bank, name on card. No card number, ever.</li><li>Near-black card illustrations in a CSS scroll-snap carousel. When a new card snaps into view, the list below switches to it.</li><li>The network marks are decorative inline SVG.</li></ul></details>
+<details><summary>Adding and Editing Subscriptions <span class="ref">forms.js · POST/PUT /api/subscriptions</span></summary><ul><li>The card form opens over the subscription form, so nothing you typed is lost.</li><li>An inline email field appears if none is saved yet. The server also refuses to save without one.</li><li>Rows show trials first, then the soonest deadline. Time left is shown in days, or months once it's 60+ days away.</li></ul></details>
+<details><summary>Monthly Totals <span class="ref">format.js</span></summary><p>Calculated in the browser from active subscriptions (trials included, cancelled ones excluded) every time the screen redraws. Money is stored in cents, so totals never drift.</p></details>
+<details><summary>Reminder Emails <span class="ref">reminders.py · mailer.py · templates/email/</span></summary><p>The rule and the SMTP steps above. The "Open Smart" button links to <code>APP_URL</code> (localhost for the demo).</p></details>
+<details><summary>In-App Reminder and the "Needs Check" Loop <span class="ref">home.js · details.js · /cancel · /renew</span></summary><p>Any active subscription with 2 or fewer days left, including past due, goes into <em>Needs attention</em> at the top. This is calculated, not stored, so it can't go out of date. "Yes, cancelled" sends it to history. "It renewed" asks for a date.</p></details>
+<details><summary>Profile <span class="ref">profile.js · PUT /api/settings</span></summary><p>The editable email, the overall total, the number of active subscriptions, the number of cards, and a link to history.</p></details>
+<details><summary>Cancelled History <span class="ref">history.js</span></summary><p>Name, card, and date cancelled, newest first. These never count toward totals.</p></details>
+
+<h2>Where each piece of data lives</h2>
+<div class="tablewrap"><table>
+<tr><th>Data</th><th>Lives in</th><th>When you come back</th></tr>
+<tr><td>Cards, subscriptions, email</td><td><code>smart.db</code> on your laptop</td><td>Still there, reloaded by <code>GET /api/state</code></td></tr>
+<tr><td>Which reminder was sent</td><td><code>last_reminded_days</code></td><td>Remembered, so no duplicate emails</td></tr>
+<tr><td>Totals, time left, Needs attention</td><td>Calculated in the browser</td><td>Recalculated</td></tr>
+<tr><td>Seen the landing page</td><td>Browser <code>localStorage</code></td><td>Opens straight to Home</td></tr>
+<tr><td>Gmail address and app password</td><td><code>.env</code> (never pushed to GitHub)</td><td>Read when the server starts</td></tr>
+</table></div>
+
+<h2>Files</h2>
+<pre>app.py              Flask: serves the app, API routes, starts the watcher
+db.py · schema.sql  The only code that touches SQLite
+reminders.py        "Is a reminder due?" + the hourly loop
+mailer.py           Writes the email, sends it via Gmail SMTP
+.env / .env.example Gmail address, app password, APP_URL
+templates/
+  index.html        The one page: Tailwind theme, screens, floating nav
+  email/            reminder.html + reminder.txt
+static/
+  css/styles.css    Card sheen, scroll snap, transitions
+  js/app.js         Start-up, state, screen switching
+  js/api.js         fetch helpers
+  js/format.js      Money, dates, totals, sorting
+  js/screens/       landing · home · forms · details · profile · history</pre>
+
+<h2>Run it and record it</h2>
+<div class="panel">
+<pre style="background:var(--bg)">python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env     (fill in Gmail address + app password)
+python app.py              → open http://localhost:5000</pre>
+<p style="margin:14px 0 0"><b>Demo:</b> two cards and a few subscriptions → swipe → add "Netflix, trial, expires today" → the email arrives → "Yes, cancelled" → the totals drop. You'll submit a video and a public GitHub repo. A live link is optional and isn't planned.</p>
+</div>
+
+<h2>Decisions</h2>
+<ul class="dec">
+<li><span class="who">You</span>Phone-first web app, not an installable phone app</li>
+<li><span class="who">You</span>Python + Flask for the server</li>
+<li><span class="who">You</span>Gmail + SMTP, to learn how email really works</li>
+<li><span class="who">You</span>Plain HTML/CSS/JS screens with Tailwind (customized so it isn't generic)</li>
+<li><span class="who">You</span>Run locally and record. No deployment for now</li>
+<li><span class="who c">Claude, accepted</span>Two parts with a SQLite file, hourly check, catch-up on startup</li>
+<li><span class="who c">Claude</span>Background thread, money in cents, calculated "needs attention," route list</li>
+</ul>
+<p><b>Check early in the build:</b> that Gmail app passwords work on your account (the first build step sends a real test email), and the exact current Tailwind v4 script URL.</p>
+
+<p class="foot">Source of truth: <code>devpost/spec.md</code>. This page is a visual companion.</p>
+</div>
+
+<script>
+const info={
+ app:["The app (frontend)","HTML, CSS and JavaScript with Tailwind, running in your browser. It draws the screens and sends everything you save to the server. It keeps no data of its own."],
+ srv:["The server (backend)","A Python Flask program on your laptop. It answers the app (save, cancel, renew), keeps the data in smart.db, and every hour checks which reminders are due."],
+ db:["smart.db (database)","One SQLite file that works like a spreadsheet the server reads and writes. Three tables: settings (your email), cards, and subscriptions."],
+ gm:["Gmail (SMTP)","The server logs in to smtp.gmail.com with your app password and hands over the reminder. Gmail does the delivering."],
+ in:["Your inbox","The reminder arrives: what renews, when, how to cancel, and an Open Smart button."]};
+const nodes=[...document.querySelectorAll('#arch .node')];
+function showInfo(k){const [t,d]=info[k];document.getElementById('archInfo').innerHTML='<h3>'+t+'</h3><p style="margin:0">'+d+'</p>';}
+nodes.forEach(n=>{n.addEventListener('click',()=>showInfo(n.dataset.k));n.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();showInfo(n.dataset.k)}})});
+
+const steps=[
+ {t:"First visit",d:"The browser loads the page. app.js looks for the smart_seen_landing note. It isn't there, so it shows the Landing screen. Tapping the button saves the note.",on:["app"],e:[],f:["templates/index.html","static/js/app.js","static/js/screens/landing.js"]},
+ {t:"Empty home",d:"The app asks the server for everything (GET /api/state). The server reads smart.db: nothing yet. Home shows a gentle prompt pointing at +.",on:["app","srv","db"],e:["e-app-srv","e-srv-db"],f:["static/js/api.js","app.py","db.py","static/js/screens/home.js"]},
+ {t:"Add a subscription",d:"+ opens the form. 'New card…' opens the card form on top. If there's no email yet, an inline field asks for it. Save sends POST /api/subscriptions. The server checks the input and stores it.",on:["app","srv","db"],e:["e-app-srv","e-srv-db"],f:["static/js/screens/forms.js","app.py","db.py"]},
+ {t:"See it land",d:"The server replies with the saved subscription. The app updates its copy and redraws: the row under its card (trials first), the card total and the overall total.",on:["app"],e:[],f:["static/js/format.js","static/js/screens/home.js"]},
+ {t:"More cards",d:"Each card is a slide in a snapping carousel. When a new card snaps into view, the list below switches to that card's subscriptions.",on:["app"],e:[],f:["static/js/screens/home.js","static/css/styles.css"]},
+ {t:"Reminder email",d:"On save, and every hour, reminders.py works out the days left. At 2 days, 1 day, or 'today if just saved,' mailer.py sends the email through Gmail and Smart records that it was sent.",on:["srv","db","gm","in"],e:["e-srv-db","e-srv-gm","e-gm-in"],f:["reminders.py","mailer.py","templates/email/reminder.html",".env"]},
+ {t:"Have you cancelled this?",d:"Anything with 2 or fewer days left (or past due) sits at the top of Home. 'Yes, cancelled' → /cancel → the totals drop and it goes to history. 'It renewed' → pick a date → /renew → reminders restart.",on:["app","srv","db"],e:["e-app-srv","e-srv-db"],f:["static/js/screens/home.js","static/js/screens/details.js","app.py"]},
+ {t:"Come back later",d:"The landing note is saved, so Smart opens straight to Home. GET /api/state brings everything back from smart.db.",on:["app","srv","db"],e:["e-app-srv","e-srv-db"],f:["static/js/app.js","db.py"]}];
+let i=0;const dots=document.getElementById('dots');
+steps.forEach((s,k)=>{const b=document.createElement('button');b.textContent=k+1;b.setAttribute('aria-label','Step '+(k+1)+': '+s.t);b.onclick=()=>go(k);dots.appendChild(b)});
+function go(k){i=(k+steps.length)%steps.length;const s=steps[i];
+ document.getElementById('stepBody').innerHTML='<div class="eyebrow">Step '+(i+1)+'</div><h3>'+s.t+'</h3><p style="margin:6px 0 0">'+s.d+'</p><div class="files">'+s.f.map(f=>'<code>'+f+'</code>').join('')+'</div>';
+ document.getElementById('count').textContent=(i+1)+' of '+steps.length;
+ [...dots.children].forEach((b,k)=>b.setAttribute('aria-current',k===i));
+ nodes.forEach(n=>{n.classList.toggle('on',s.on.includes(n.dataset.k));n.classList.toggle('off',!s.on.includes(n.dataset.k))});
+ document.querySelectorAll('#arch .edge').forEach(p=>p.classList.toggle('on',s.e.includes(p.id)));}
+document.getElementById('prev').onclick=()=>go(i-1);document.getElementById('next').onclick=()=>go(i+1);
+go(0);
+</script>
+</body>
+</html>
