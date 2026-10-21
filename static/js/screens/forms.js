@@ -7,6 +7,7 @@ import {
   allTimeZones, cleanMoney, detectedTimeZone, escapeHtml, todayIso, reminderAtText, setTimeZone, timeZoneLabel,
 } from "../format.js";
 import { toast } from "../toast.js";
+import { dateField, setPickerValue, timeField, wirePickers } from "../pickers.js";
 
 const NEW_CARD = "__new";
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -41,8 +42,8 @@ export function renderSubscriptionForm(root, state, subId = null) {
       </div>
 
       <div class="grid grid-cols-[1fr_auto] gap-3">
-        ${field("deadline", "Next billing date", `<input id="deadline" name="deadline" type="date" class="field-input">`)}
-        ${field("reminder_time", "Remind me at", `<input id="reminder_time" name="reminder_time" type="time" value="09:00" class="field-input">`)}
+        ${field("deadline", "Next billing date", dateField("deadline"))}
+        ${field("reminder_time", "Remind me at", timeField("reminder_time"))}
       </div>
       <p id="reminder-settings-line" class="-mt-3 text-sm text-graphite leading-relaxed"></p>
 
@@ -78,7 +79,7 @@ export function renderSubscriptionForm(root, state, subId = null) {
     root.querySelector('[for="deadline"]').textContent = inputs.is_trial.checked ? "Trial ends" : "Next billing date";
   };
   inputs.is_trial.addEventListener("change", showTrialLabel);
-  inputs.deadline.min = todayIso(); // the date picker greys out days before today
+  wirePickers(root, { min: todayIso() }); // the calendar greys out days before today
 
   // Only numbers in the price: anything else is removed as you type or paste.
   inputs.monthly_cost.addEventListener("input", () => {
@@ -103,8 +104,8 @@ export function renderSubscriptionForm(root, state, subId = null) {
     inputs.name.value = editing.name;
     inputs.monthly_cost.value = (editing.monthly_cost_cents / 100).toFixed(2);
     inputs.is_trial.checked = Boolean(editing.is_trial);
-    inputs.deadline.value = editing.deadline;
-    inputs.reminder_time.value = editing.reminder_time;
+    setPickerValue(inputs.deadline, editing.deadline);
+    setPickerValue(inputs.reminder_time, editing.reminder_time);
     inputs.source_value.value = editing.source_value;
     chooseSource(editing.source_type, true);
     showTrialLabel();
@@ -276,13 +277,14 @@ export function openRenewSheet(sub, state, onRenewed) {
     <h2 class="text-2xl font-semibold tracking-tight">${escapeHtml(sub.name)} renewed</h2>
     <p class="mt-2 text-sm text-graphite">When is the next billing date? Smart will remind you before it, at ${escapeHtml(sub.reminder_time)}.</p>
     <form novalidate class="mt-6 space-y-5">
-      ${field("deadline", "Next billing date", `<input id="deadline" name="deadline" type="date" min="${todayIso()}" class="field-input">`)}
+      ${field("deadline", "Next billing date", dateField("deadline"))}
       <p class="field-error" data-error-for="form"></p>
       <button type="submit" class="btn-primary">Save</button>
       <button type="button" data-close class="w-full py-3 text-graphite">Cancel</button>
     </form>`);
 
   const form = sheet.querySelector("form");
+  wirePickers(sheet, { min: todayIso() });
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const deadline = form.elements.deadline.value;
