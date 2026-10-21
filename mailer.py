@@ -56,7 +56,7 @@ def build_reminder(to_address, sub, card_nickname, days_left):
     msg = EmailMessage()
     msg["From"] = f"Smart <{os.getenv('GMAIL_ADDRESS', '')}>"
     msg["To"] = to_address
-    msg["Subject"] = f"{sub['name']} renews {details['when']} — cancel here if you don't want it"
+    msg["Subject"] = f"Heads up: {sub['name']} renews {details['when']}"
     # Plain text first, then the HTML version. Mail apps show the nicest one they can.
     msg.set_content(render_template("email/reminder.txt", **details))
     msg.add_alternative(render_template("email/reminder.html", **details), subtype="html")
