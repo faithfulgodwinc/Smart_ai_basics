@@ -14,7 +14,7 @@ Smart has three parts.
 2. **The server (backend).** A small Python program built with Flask that stays running on your laptop. It does three jobs:
    - **Keeps your data** in a database: one file, `smart.db` (SQLite), which works like a spreadsheet the program reads and writes. It holds your cards, your subscriptions and your reminder email.
    - **Answers the app.** When the app says "save this subscription" or "mark this cancelled," the server updates the database and replies.
-   - **Watches the deadlines.** Every hour, and once each time it starts, it asks: *"Is any active subscription due in 2 days or tomorrow, and haven't I already sent that reminder?"* It also checks the moment you save something, so a subscription that expires today gets its email right away. That's the demo.
+   - **Watches the deadlines.** Every minute, and once each time it starts, it asks: *"Is any active subscription due in 2 days, tomorrow or today, has its reminder time passed, and haven't I already sent that reminder?"* It also checks the moment you save something, so a subscription whose reminder is already due gets its email right away. Set the reminder time a couple of minutes ahead and you can watch it arrive on its own. That's the demo.
 
 3. **Gmail (the email service).** When a reminder is due, the server writes the email and connects to Gmail's mail server (`smtp.gmail.com`) using **SMTP**, the basic language every email system uses to pass mail along. It logs in with a Gmail **app password** (a special password just for Smart, kept in a hidden `.env` file that never goes to GitHub) and hands over the message. Gmail then delivers it to the inbox.
 
@@ -39,7 +39,7 @@ PRD ref: `prd.md > The Core Journey`.
             ◄── saved subscription (+ "reminder sent")
  home redraws: row under its card, totals update
 
- (every hour)                     reminders.check_all() → same steps for every active subscription
+ (every minute)                   reminders.check_all() → same steps for every active subscription
 ```
 
 1. **First visit.** The browser loads `index.html`. `app.js` checks a small browser note (`localStorage`: `smart_seen_landing`). If it's missing, it shows the **Landing** screen. Tapping the one button sets the note and shows Home.
@@ -50,7 +50,7 @@ PRD ref: `prd.md > The Core Journey`.
    - Save sends `POST /api/subscriptions`. The server validates, stores the row, and immediately runs the reminder check for that subscription.
 4. **See it land.** The server replies with the saved subscription. The app adds it to its in-memory copy of the data and redraws Home: the row under its card (trials first), the card total and the overall total.
 5. **More cards.** Each card is one slide in a horizontally snapping carousel. When a different card snaps into view, the list below switches to that card's subscriptions.
-6. **Reminder.** The server's hourly check (and the check on save) works out "days left" for every active subscription. At 2 days, 1 day, or "today if just saved," it sends the email through Gmail and records that it did.
+6. **Reminder.** The server's once-a-minute check (and the check on save) works out each active subscription's next reminder: 2 days before, 1 day before, or "today" if none was sent yet, each at its reminder time. When that moment has passed, it sends the email through Gmail and records that it did. If it hasn't, the save reply says when it will go out.
 7. **In-app check.** When Home draws, any active subscription with 2 or fewer days left (including past due) goes into a **Needs attention** section at the top with "Have you cancelled this?"
    - **Yes, cancelled** → `POST /api/subscriptions/<id>/cancel` → status becomes `cancelled`, totals drop, and it appears in Cancelled history.
    - **It renewed** → a date picker → `POST /api/subscriptions/<id>/renew` → new deadline, reminder memory cleared, and reminders continue for the new date.
@@ -66,7 +66,7 @@ PRD ref: `prd.md > The Core Journey`.
 | Font | System font (SF Pro on Apple devices), with **Inter** as the fallback | Matches your "Grok / Apple" lettering. Inter is free. | [Inter on Google Fonts](https://fonts.google.com/specimen/Inter) |
 | Server | **Python 3.11+ with Flask 3** | Your choice: readable, so the email logic is easy to own and change. Tradeoff: switching between JS (screens) and Python (server). | [Flask docs](https://flask.palletsprojects.com/) |
 | Database | **SQLite** via Python's built-in `sqlite3` | One file, nothing to install or host. | [sqlite3](https://docs.python.org/3/library/sqlite3.html) |
-| Deadline watcher | A background thread inside the Flask server that wakes up every 60 minutes | No extra scheduling library. It's a plain loop you can read: "check, then sleep an hour." | [threading](https://docs.python.org/3/library/threading.html) |
+| Deadline watcher | A background thread inside the Flask server that wakes up every 60 seconds | No extra scheduling library. It's a plain loop you can read: "check, then sleep a minute." A minute is precise enough for per-subscription reminder times. | [threading](https://docs.python.org/3/library/threading.html) |
 | Email | **Gmail via SMTP**, using Python's built-in `smtplib` + `email.message` | Your choice, picked so you'd learn how email sending actually works. Free, and can send to any address. Tradeoff: emails come from your Gmail address, and it isn't how a large product would send. | [smtplib](https://docs.python.org/3/library/smtplib.html) · [email.message](https://docs.python.org/3/library/email.message.html) |
 | Secrets | `python-dotenv` reads a hidden `.env` file | Keeps your app password out of the public GitHub repository. | [python-dotenv](https://pypi.org/project/python-dotenv/) |
 
@@ -84,8 +84,8 @@ PRD ref: `prd.md > The Core Journey`.
   copy .env.example .env      # then fill in GMAIL_ADDRESS and GMAIL_APP_PASSWORD
   ```
 - **Start:** `python app.py`, then open `http://localhost:5000`.
-- **Demo recording:** add two cards and a few subscriptions → swipe between cards and point out the totals → add "Netflix," trial, **expires today** → show the reminder email arriving in Gmail (opened on the same laptop) → back in Smart, tap "Yes, cancelled" → the totals drop → show Cancelled history.
-- **Submission:** a short demo video plus a public GitHub repository, both required. Deployment is **not planned**. Running locally and recording it is enough. If you later want a live link, that's a `6-ship` decision. The server would need a host that keeps it running (so the hourly check works), plus the same `.env` values set there.
+- **Demo recording:** add two cards and a few subscriptions → swipe between cards and point out the totals → add "Netflix," trial, **expires today**, **remind me at two minutes from now** → Smart says "Reminder set for …" → wait → show the reminder email arriving in Gmail (opened on the same laptop) → back in Smart, tap "Yes, cancelled" → the totals drop → show Cancelled history.
+- **Submission:** a short demo video plus a public GitHub repository, both required. Deployment is **not planned**. Running locally and recording it is enough. If you later want a live link, that's a `6-ship` decision. The server would need a host that keeps it running (so the once-a-minute check works), plus the same `.env` values set there.
 
 ## Look and Feel
 
@@ -136,7 +136,7 @@ PRD ref: `prd.md > Landing Page`.
 PRD ref: `prd.md > Cards`, `prd.md > Monthly Totals`, `prd.md > In-App Reminder and the "Needs Check" Loop`, `prd.md > States and Boundaries`.
 
 #### Forms — `static/js/screens/forms.js`
-- **Subscription form** (add and edit): name, monthly cost, "Free trial I intend to cancel?" toggle, trial end / next billing date, card picker (with "New card…"), and "Where did you subscribe?" (Website → cancel/plans link, or App → app name). If no email exists, it shows an inline email field.
+- **Subscription form** (add and edit): name, monthly cost, "Free trial I intend to cancel?" toggle, trial end / next billing date, card picker (with "New card…"), "Where did you subscribe?" (Website → cancel/plans link, or App → app name), and "Remind me at" (a time, default 09:00). If no email exists, it shows an inline email field.
 - **Card form** (add and edit): nickname, bank, name on card. It opens as a sheet *over* the subscription form, so typed values are kept.
 - **Renew sheet:** a single date field for "next billing date."
 - **Validation** next to each field: required fields filled, cost is a number ≥ 0, a valid date, an email that looks like `x@y.z`, and a link that starts with `http://` or `https://`. The server repeats the same checks.
@@ -167,13 +167,14 @@ PRD ref: `prd.md > States and Boundaries` (persistence).
 
 #### Reminder logic — `reminders.py`
 Decides *whether* a reminder is due. It never sends anything itself.
-- `days_left = deadline − today` (in the server's local date).
-- **The rule** for an active subscription:
-  - `days_left` is 2 or 1, and no reminder has been sent for that day yet → send.
-  - `days_left` is 0 and **no** reminder has been sent at all (it was just saved, due today) → send a "today" reminder.
-  - `days_left` is below 0 → no email. The app shows it under Needs attention.
+- All times are the server's local time (the laptop's clock, so the person's own time zone).
+- **The rule** for an active subscription: its possible reminders are 2 days before and 1 day before the deadline, plus a "today" reminder on the deadline only if **no** reminder was sent at all. Each one happens at the subscription's `reminder_time` on that day.
+  - `next_reminder(sub, now)` picks the earliest of those that hasn't been sent and whose day isn't already over.
+  - If that moment has passed (`<= now`) → send it. If it's still ahead → it's "scheduled" for that moment.
+  - After the deadline day → no email. The app shows it under Needs attention.
+- A lock makes sure the save-time check and the background check can't send the same reminder twice at the same moment.
 - After a successful send, it stores `last_reminded_days` (2, 1 or 0), so the same reminder is never sent twice. It also only sends a closer reminder than the last one (saving with 1 day left sends the 1-day email, not the 2-day one).
-- `check_one(sub_id)` runs on save, edit and renew. `check_all()` runs on startup and every 60 minutes. `start_watcher()` is the background loop: `while True: check_all(); sleep(3600)`.
+- `check_one(sub_id)` runs on save, edit and renew, and returns `sent`, `scheduled` (with when), `not_due` or `failed`. `check_all()` runs on startup and every 60 seconds. `start_watcher()` is the background loop: `while True: check_all(); sleep(60)`.
 - Cancelled subscriptions are skipped, which is how "reminders stop once updated" happens. Renewing sets a new deadline and clears `last_reminded_days`, which is how "reminders continue for the new date" happens.
 
 PRD ref: `prd.md > Reminder Emails`, `prd.md > In-App Reminder and the "Needs Check" Loop`.
@@ -182,7 +183,7 @@ PRD ref: `prd.md > Reminder Emails`, `prd.md > In-App Reminder and the "Needs Ch
 Builds and sends one email.
 1. Fill in `templates/email/reminder.txt` and `reminder.html` (Jinja, via Flask's `render_template`) with: the subscription name, when it renews ("in 2 days" / "tomorrow" / "today"), cost, card nickname, how to cancel (the link for a website, or "open the [app] app" for an app), and an **Open Smart** button linking to `APP_URL`.
 2. Put it in an `EmailMessage` with a plain-text body plus an HTML version, From = your Gmail, To = the reminder email, Subject e.g. "Netflix renews tomorrow — cancel here if you don't want it."
-3. `smtplib.SMTP("smtp.gmail.com", 587)` → `starttls()` (switch to an encrypted connection) → `login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)` → `send_message(msg)` → close.
+3. `smtplib.SMTP_SSL("smtp.gmail.com", 465)` (encrypted from the first moment) → `login(GMAIL_ADDRESS, GMAIL_APP_PASSWORD)` → `send_message(msg)` → close.
 4. Return success or failure. On failure, `reminders.py` does **not** mark it sent, so the next check retries.
 
 PRD ref: `prd.md > Reminder Emails`.
@@ -197,7 +198,7 @@ All JSON. Errors come back as `{"error": "message", "field": "fieldName"}` with 
 | `PUT /api/settings` | `{ email }` | `{ email }` | add form (first time), Profile |
 | `POST /api/cards` | `{ nickname, bank, name_on_card }` | the card | card form |
 | `PUT /api/cards/<id>` | same | the card | card form (edit) |
-| `POST /api/subscriptions` | `{ name, monthly_cost, is_trial, deadline, card_id, source_type, source_value }` | `{ subscription, reminder: "sent" \| "not_due" \| "failed" }` | add form |
+| `POST /api/subscriptions` | `{ name, monthly_cost, is_trial, deadline, reminder_time, card_id, source_type, source_value }` | `{ subscription, reminder: "sent" \| "scheduled" \| "not_due" \| "failed", reminder_at }` (`reminder_at` = `'YYYY-MM-DDTHH:MM'` when scheduled) | add form |
 | `PUT /api/subscriptions/<id>` | same fields | same | edit form |
 | `POST /api/subscriptions/<id>/cancel` | — | the subscription | Needs attention, Details |
 | `POST /api/subscriptions/<id>/renew` | `{ deadline }` | `{ subscription, reminder }` | renew sheet |
@@ -223,6 +224,7 @@ subscriptions (id INTEGER PRIMARY KEY,
                source_value TEXT NOT NULL,                 -- cancel link, or app name
                status TEXT NOT NULL DEFAULT 'active',      -- 'active' | 'cancelled'
                cancelled_on TEXT,                          -- 'YYYY-MM-DD' when marked cancelled
+               reminder_time TEXT NOT NULL DEFAULT '09:00', -- 'HH:MM' local time the reminders go out
                last_reminded_days INTEGER,                 -- 2, 1, 0, or NULL = none sent for this deadline
                created_at TEXT NOT NULL)
 ```
@@ -245,7 +247,7 @@ AI Basics/
 ├── app.py                  # Flask server: serves the app, JSON API routes, starts the deadline watcher
 ├── db.py                   # The only file that talks to SQLite: open, create tables, queries
 ├── schema.sql              # Table definitions for settings, cards, subscriptions
-├── reminders.py            # "Is a reminder due?" rule, check_one / check_all, hourly watcher loop
+├── reminders.py            # "Is a reminder due?" rule, check_one / check_all, once-a-minute watcher loop
 ├── mailer.py               # Builds the email and sends it through Gmail SMTP
 ├── requirements.txt        # flask, python-dotenv
 ├── .env.example            # GMAIL_ADDRESS=, GMAIL_APP_PASSWORD=, APP_URL=http://localhost:5000
@@ -280,9 +282,9 @@ AI Basics/
 ## External Services and Dependencies
 
 ### Gmail SMTP
-- **Server:** `smtp.gmail.com`, port `587` with STARTTLS (or `465` with SSL).
+- **Server:** `smtp.gmail.com`, port `465` with SSL. (Port `587` with STARTTLS also exists, but it timed out on the learner's network during the build.)
 - **Auth:** your Gmail address + a 16-character **app password** (Google Account → Security → 2-Step Verification → App passwords). Not your normal Gmail password.
-- **Call:** `smtplib.SMTP(host, 587)` → `.starttls()` → `.login(user, app_password)` → `.send_message(EmailMessage)` → `.quit()`.
+- **Call:** `smtplib.SMTP_SSL(host, 465)` → `.login(user, app_password)` → `.send_message(EmailMessage)` → `.quit()`.
 - **Limits:** personal Gmail allows roughly 500 recipients a day, far more than the demo needs. Free.
 - **Docs:** [Sign in with app passwords](https://support.google.com/accounts/answer/185833) · [Python smtplib](https://docs.python.org/3/library/smtplib.html) · [Python email examples](https://docs.python.org/3/library/email.examples.html)
 
@@ -298,7 +300,7 @@ AI Basics/
 
 ## Important Failure Modes
 
-- **Gmail refuses the login or the send** (wrong app password, 2-Step Verification off, no internet) → the subscription **still saves**. The app shows a soft note: "Saved. The reminder email couldn't be sent — check the email settings in `.env`." The server prints the exact error in the terminal, and the reminder isn't marked sent, so the next hourly check retries. The first build step tests sending before anything else depends on it.
+- **Gmail refuses the login or the send** (wrong app password, 2-Step Verification off, no internet) → the subscription **still saves**. The app shows a soft note: "Saved. The reminder email couldn't be sent — check the email settings in `.env`." The server prints the exact error in the terminal, and the reminder isn't marked sent, so the next check (a minute later) retries. The first build step tests sending before anything else depends on it.
 - **The server was off when a reminder was due** → it runs `check_all()` on startup and sends whatever is still due. If the deadline has already passed, no email goes out, but the subscription appears under Needs attention.
 - **"Open Smart" opened on a phone** → the link points to `http://localhost:5000`, which only exists on the laptop. For the demo, open the email on the laptop. `APP_URL` in `.env` can be changed later (for example to a live address) without touching code.
 - **Tailwind fails to load (offline)** → the layout loses most of its styling. Record the demo with internet on. `styles.css` keeps the card and nav basics readable.
@@ -307,11 +309,11 @@ AI Basics/
 ## What Was Simplified and Why
 
 - **One database file on the laptop** instead of a hosted database. One person, one device, and no infrastructure. A multi-user version would need accounts and a hosted database.
-- **An hourly loop inside the server** instead of a separate scheduling service. Reminders are about *days*, so checking hourly is plenty. A production version would run the check on an always-on host.
+- **A once-a-minute loop inside the server** instead of a separate scheduling service. Reminders happen at a chosen minute, and checking a small table every minute costs nothing. A production version would run the check on an always-on host.
 - **Gmail SMTP** instead of a dedicated email service. Free, works for any address, and teaches the real mechanism. For a real product, swap `mailer.py` to an email API with your own domain. The rest of the code doesn't change.
 - **Tailwind from a CDN link** instead of a Tailwind build setup. No Node tooling needed. For production, switch to Tailwind's command-line build.
 - **Run locally and record** instead of deploying. Submission needs the video and repository, not a live link.
-- **The demo uses the real path:** saving a subscription that expires today triggers a real email through the same code as the hourly check. Nothing is faked.
+- **The demo uses the real path:** saving a subscription that expires today triggers a real email through the same code as the background check, and a reminder time two minutes ahead shows the background check sending it by itself. Nothing is faked.
 
 ## Decisions and Open Issues
 
@@ -322,7 +324,7 @@ AI Basics/
 - **Plain HTML/CSS/JS** for the screens, plus **Tailwind** (the learner asked for a styling library that keeps it from looking generic).
 - **Run locally and record.** Deployment isn't planned now and can be revisited in `6-ship`.
 
-**Recommended by Claude, accepted by the learner:** the two-part frontend + server shape with an SQLite file, and the hourly deadline check with catch-up on startup.
+**Recommended by Claude, accepted by the learner:** the two-part frontend + server shape with an SQLite file, and the background deadline check with catch-up on startup (hourly at first, changed to every minute when per-subscription reminder times were added during the build).
 
 **Implementation details derived from those choices (Claude):** a background thread instead of a scheduler library, money stored in cents, `last_reminded_days` to prevent duplicates, "needs attention" calculated rather than stored, URL-hash screen switching, the `@theme` palette values, and the route list above.
 

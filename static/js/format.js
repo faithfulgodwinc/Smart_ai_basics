@@ -35,6 +35,17 @@ export function sortSubscriptions(subscriptions) {
     (b.is_trial - a.is_trial) || a.deadline.localeCompare(b.deadline) || a.id - b.id);
 }
 
+// "2026-11-05T14:32" -> "14:32 today" / "9:00 tomorrow" / "9:00 on 3 Nov", in the person's own clock style.
+export function reminderAtText(isoMoment, today = new Date()) {
+  const [day, time] = isoMoment.split("T");
+  const [hour, minute] = time.split(":").map(Number);
+  const clock = new Date(2000, 0, 1, hour, minute).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const days = daysLeft(day, today);
+  if (days === 0) return `${clock} today`;
+  if (days === 1) return `${clock} tomorrow`;
+  return `${clock} on ${parseDate(day).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
+}
+
 export function isActive(sub) {
   return sub.status === "active";
 }

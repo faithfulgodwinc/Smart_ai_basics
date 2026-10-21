@@ -3,12 +3,14 @@
 Start it with:  python app.py   then open http://localhost:5000
 """
 
+import os
 import re
 from datetime import date
 
 from flask import Flask, jsonify, render_template, request
 
 import db
+import reminders
 
 app = Flask(__name__)
 
@@ -29,6 +31,7 @@ def invalid_input(error):
 # --- Checks (the app's forms repeat these, so messages show next to the field) ---
 
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+TIME_PATTERN = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")  # 24-hour 'HH:MM'
 
 
 def required_text(body, field, label):
@@ -64,6 +67,13 @@ def valid_date(body, field="deadline"):
         raise InvalidInput(field, "Pick a date.")
 
 
+def valid_time(body):
+    reminder_time = str(body.get("reminder_time") or "").strip()
+    if not TIME_PATTERN.match(reminder_time):
+        raise InvalidInput("reminder_time", "Pick a time for the reminder.")
+    return reminder_time
+
+
 def valid_card_id(body):
     try:
         card_id = int(body.get("card_id"))
@@ -93,6 +103,7 @@ def subscription_fields(body):
         "monthly_cost_cents": valid_cost_cents(body),
         "is_trial": 1 if body.get("is_trial") else 0,
         "deadline": valid_date(body),
+        "reminder_time": valid_time(body),
         "card_id": valid_card_id(body),
         "source_type": source_type,
         "source_value": source_value,
@@ -139,10 +150,13 @@ def post_subscription():
         raise InvalidInput("email", "Add the email where reminders should go.")
     fields = subscription_fields(request.get_json(silent=True) or {})
     subscription = db.insert_subscription(fields)
-    return jsonify(subscription=subscription, reminder="not_due"), 201
+    result = reminders.check_one(subscription["id"])  # sends it now if it's already due
+    return jsonify(subscription=db.get_subscription(subscription["id"]), **result), 201
 
 
 db.init_db()
 
 if __name__ == "__main__":
-    app.run(port=5000, debug=False)
+    # Started here, once, so there's only ever one watcher (debug auto-reload would start two).
+    reminders.start_watcher(app)
+    app.run(port=int(os.getenv("PORT", "5000")), debug=False)

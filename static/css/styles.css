@@ -191,3 +191,26 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* --- Toast (a calm note after saving) ------------------------------------ */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: max(28px, env(safe-area-inset-bottom));
+  width: calc(100% - 32px);
+  max-width: 340px;
+  transform: translate(-50%, 16px);
+  margin-left: -36px; /* keep clear of the floating nav on the right */
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 18px;
+  padding: 14px 18px;
+  font-size: 14px;
+  line-height: 1.45;
+  box-shadow: 0 14px 34px -14px rgba(10, 10, 10, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 250ms var(--ease), transform 250ms var(--ease);
+  z-index: 60;
+}
+.toast.is-shown { opacity: 1; transform: translate(-50%, 0); }

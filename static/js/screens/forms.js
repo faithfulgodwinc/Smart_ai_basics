@@ -3,10 +3,12 @@
 
 import * as api from "../api.js";
 import { ApiError } from "../api.js";
-import { escapeHtml } from "../format.js";
+import { escapeHtml, reminderAtText } from "../format.js";
+import { toast } from "../toast.js";
 
 const NEW_CARD = "__new";
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 // --- Subscription form ---------------------------------------------------
 
@@ -28,7 +30,10 @@ export function renderSubscriptionForm(root, state) {
         <span class="switch"><input type="checkbox" id="is_trial" name="is_trial"><span></span></span>
       </div>
 
-      ${field("deadline", "Next billing date", `<input id="deadline" name="deadline" type="date" class="field-input">`)}
+      <div class="grid grid-cols-[1fr_auto] gap-3">
+        ${field("deadline", "Next billing date", `<input id="deadline" name="deadline" type="date" class="field-input">`)}
+        ${field("reminder_time", "Remind me at", `<input id="reminder_time" name="reminder_time" type="time" value="09:00" class="field-input">`)}
+      </div>
 
       ${field("card_id", "Card", `
         <select id="card_id" name="card_id" class="field-input">
@@ -98,6 +103,7 @@ export function renderSubscriptionForm(root, state) {
       monthly_cost: inputs.monthly_cost.value.trim(),
       is_trial: inputs.is_trial.checked,
       deadline: inputs.deadline.value,
+      reminder_time: inputs.reminder_time.value,
       card_id: inputs.card_id.value,
       source_type: sourceType,
       source_value: inputs.source_value.value.trim(),
@@ -114,10 +120,11 @@ export function renderSubscriptionForm(root, state) {
       if (needsEmail) {
         state.email = (await api.saveEmail(email)).email;
       }
-      const { subscription } = await api.saveSubscription(values);
-      state.subscriptions.push(subscription);
-      state.currentCardId = subscription.card_id;
+      const result = await api.saveSubscription(values);
+      state.subscriptions.push(result.subscription);
+      state.currentCardId = result.subscription.card_id;
       location.hash = "#home";
+      toast(reminderNote(result, state.email));
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
       showErrors(root, { [error.field || "form"]: error.message });
@@ -140,6 +147,7 @@ export function checkSubscription(values, email, needsEmail) {
   if (values.monthly_cost === "" || Number.isNaN(cost)) errors.monthly_cost = "Add the monthly cost as a number, like 9.99.";
   else if (cost < 0) errors.monthly_cost = "The cost can't be below 0.";
   if (!values.deadline) errors.deadline = "Pick a date.";
+  if (!TIME_PATTERN.test(values.reminder_time)) errors.reminder_time = "Pick a time for the reminder.";
   if (!values.card_id || values.card_id === NEW_CARD) errors.card_id = "Choose the card it's on.";
   if (values.source_type === "website" && !/^https?:\/\//.test(values.source_value)) {
     errors.source_value = "Paste the full link, starting with https://";
@@ -147,6 +155,14 @@ export function checkSubscription(values, email, needsEmail) {
   if (values.source_type === "app" && !values.source_value) errors.source_value = "Add the app's name.";
   if (needsEmail && !EMAIL_PATTERN.test(email || "")) errors.email = "That email doesn't look right. Try name@example.com.";
   return errors;
+}
+
+// What happened to the reminder when this subscription was saved.
+function reminderNote({ reminder, reminder_at: reminderAt }, email) {
+  if (reminder === "sent") return `Saved. Reminder sent to ${email}.`;
+  if (reminder === "scheduled") return `Saved. Reminder set for ${reminderAtText(reminderAt)}.`;
+  if (reminder === "failed") return "Saved. The reminder email couldn't be sent — check the email settings in .env.";
+  return "Saved.";
 }
 
 // --- Card sheet ------------------------------------------------------------

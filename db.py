@@ -31,6 +31,10 @@ def init_db():
     """Create the tables from schema.sql if they don't exist yet."""
     with connect() as conn:
         conn.executescript(SCHEMA_PATH.read_text())
+        # A smart.db made before reminder times existed gets the new column added.
+        columns = [row["name"] for row in conn.execute("PRAGMA table_info(subscriptions)")]
+        if "reminder_time" not in columns:
+            conn.execute("ALTER TABLE subscriptions ADD COLUMN reminder_time TEXT NOT NULL DEFAULT '09:00'")
 
 
 def now():
@@ -92,14 +96,26 @@ def get_subscription(sub_id):
     return dict(row) if row else None
 
 
+def list_active_subscriptions():
+    with connect() as conn:
+        rows = conn.execute("SELECT * FROM subscriptions WHERE status = 'active' ORDER BY id").fetchall()
+    return [dict(row) for row in rows]
+
+
 def insert_subscription(fields):
-    """fields: card_id, name, monthly_cost_cents, is_trial, deadline, source_type, source_value."""
+    """fields: card_id, name, monthly_cost_cents, is_trial, deadline, reminder_time, source_type, source_value."""
     with connect() as conn:
         cursor = conn.execute(
             "INSERT INTO subscriptions (card_id, name, monthly_cost_cents, is_trial, deadline, "
-            "source_type, source_value, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            "reminder_time, source_type, source_value, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (fields["card_id"], fields["name"], fields["monthly_cost_cents"], fields["is_trial"],
-             fields["deadline"], fields["source_type"], fields["source_value"], now()),
+             fields["deadline"], fields["reminder_time"], fields["source_type"], fields["source_value"], now()),
         )
         sub_id = cursor.lastrowid
     return get_subscription(sub_id)
+
+
+def mark_reminded(sub_id, days_before):
+    """Remember which reminder was sent (2, 1 or 0 days before), so it's never sent twice."""
+    with connect() as conn:
+        conn.execute("UPDATE subscriptions SET last_reminded_days = ? WHERE id = ?", (days_before, sub_id))

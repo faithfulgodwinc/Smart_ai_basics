@@ -18,8 +18,8 @@ Source: `scope.md > The Unique Kernel`, `scope.md > The Core Loop`, `scope.md > 
    - If Smart has no email address yet, it asks for one here, before the first subscription can be saved. The email then shows up in Profile.
 4. **See it land.** Home updates. The subscription appears under its card, with the time left and the renewal date. Free trials are labelled and shown first. The card's monthly total and the overall monthly total both update.
 5. **More cards.** They add more subscriptions and cards, and **swipe between cards** on home to see what each card is carrying.
-6. **Reminder.** Two days before the deadline, and again one day before, Smart sends a **reminder email** naming the subscription, when it renews, and how to cancel: the website link, or the app to go to. The email has an **"Open Smart"** button.
-   - If a reminder is already due when they save (the deadline is within 2 days), Smart sends it **right away**.
+6. **Reminder.** Two days before the deadline, and again one day before, at the **reminder time** they chose for that subscription, Smart sends a **reminder email** naming the subscription, when it renews, and how to cancel: the website link, or the app to go to. The email has an **"Open Smart"** button.
+   - If a reminder is already due when they save (the deadline is within 2 days and the reminder time has passed), Smart sends it **right away**. Otherwise Smart tells them when it will arrive, e.g. "Reminder set for 14:32 today."
 7. **In-app check.** In Smart, anything due soon or past due rises **to the top** and asks **"Have you cancelled this?"**
    - **Yes, cancelled** → it moves from the active list to **Cancelled history** and the totals drop.
    - **It renewed** → Smart asks for the next billing date. It becomes active again and reminders continue.
@@ -73,7 +73,7 @@ Five calm screens. Detail is kept tucked away until someone asks for it.
 
 ### Adding and Editing Subscriptions
 *(scope: The Core Loop, The POC Boundary)*
-- Fields: **name**, **monthly cost**, **free trial I intend to cancel?** (yes/no), **trial end / next billing date**, **card**, and **where they subscribed**: a **website** (with the cancel/plans link) or an **app** (with the app's name).
+- Fields: **name**, **monthly cost**, **free trial I intend to cancel?** (yes/no), **trial end / next billing date**, **card**, **where they subscribed**: a **website** (with the cancel/plans link) or an **app** (with the app's name), and **remind me at** (a time of day, 09:00 unless changed).
 - A free trial is tracked by the expiry date the person sets (e.g. 7 days from today).
 - [ ] The plus button opens the add form. Saving puts the subscription under the chosen card right away.
 - [ ] If the chosen card doesn't exist, it can be created from inside the add form without losing what's been typed.
@@ -91,9 +91,10 @@ Five calm screens. Detail is kept tucked away until someone asks for it.
 
 ### Reminder Emails
 *(scope: What "Working" Looks Like, The POC Boundary)*
-- [ ] A real email is sent to the person's address **2 days before** and **1 day before** the deadline.
+- [ ] A real email is sent to the person's address **2 days before** and **1 day before** the deadline, once that day's clock reaches the subscription's reminder time (the laptop's local time).
 - [ ] Reminders stop once the subscription is marked cancelled or renewed.
-- [ ] If a reminder is already due when the subscription is saved (deadline within 2 days, including today), the email is sent right away. **This is how the demo works:** add "Netflix, expires today," save, and the email arrives.
+- [ ] If a reminder is already due when the subscription is saved (deadline within 2 days, including today, and the reminder time has passed), the email is sent right away.
+- [ ] Otherwise, after saving, Smart says when the next reminder will arrive, and it arrives at that time without anyone touching the app. **This is how the live demo works:** add "Netflix, expires today, remind me at" two minutes from now, save, wait, and the email arrives.
 - [ ] The email names the subscription and when it renews ("in 2 days" / "tomorrow" / "today").
 - [ ] For a **website** subscription, the email includes the cancel link. For an **app** subscription, it names the app to go cancel in.
 - [ ] The email has an **"Open Smart"** button that opens the app. The email itself has no update buttons.
@@ -134,6 +135,7 @@ Five calm screens. Detail is kept tucked away until someone asks for it.
 - **The email's button only opens Smart (Option B),** and updates happen in the app. It's simpler and more reliable for the demo than update buttons in the email.
 - **Reminders at 2 days and 1 day before, and they stop once updated.**
 - **Send immediately if a reminder is already due.** It makes the demo natural (add something expiring today) with no special demo button.
+- **A reminder time per subscription** (added during the build). A live demo can show an email arriving on its own a couple of minutes after saving, proving Smart watches deadlines by itself. It uses the laptop's clock, so it's already the person's own time zone; detecting time zones automatically waits until Smart is online.
 - **"Where did you subscribe" is captured when adding,** so the email can be precise (a link for websites, the app name for apps).
 - **Profile is a summary; home is for tracking.**
 - **Black-and-white palette** chosen by the learner, for calm without colorful noise.

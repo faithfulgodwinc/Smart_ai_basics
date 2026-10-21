@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     monthly_cost_cents INTEGER NOT NULL,          -- 15.49 stored as 1549, so totals never drift
     is_trial           INTEGER NOT NULL DEFAULT 0, -- 0/1
     deadline           TEXT NOT NULL,             -- 'YYYY-MM-DD' trial end / next billing date
+    reminder_time      TEXT NOT NULL DEFAULT '09:00', -- 'HH:MM' local time the reminders go out
     source_type        TEXT NOT NULL,             -- 'website' | 'app'
     source_value       TEXT NOT NULL,             -- cancel link, or app name
     status             TEXT NOT NULL DEFAULT 'active', -- 'active' | 'cancelled'

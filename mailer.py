@@ -3,8 +3,8 @@
 How sending works, step by step:
   1. Fill in the email templates (plain text + HTML) with the subscription's details.
   2. Wrap them in an EmailMessage with From, To and Subject.
-  3. Connect to Gmail's mail server, switch to an encrypted connection (STARTTLS),
-     and log in with your Gmail app password.
+  3. Connect to Gmail's mail server over an encrypted connection (SSL, encrypted from
+     the very first moment), and log in with your Gmail app password.
   4. Hand over the message. Gmail delivers it to the inbox.
 
 This file never decides *when* to send. That's reminders.py's job.
@@ -20,7 +20,9 @@ from flask import render_template
 load_dotenv()
 
 SMTP_HOST = "smtp.gmail.com"
-SMTP_PORT = 587  # the port for "start plain, then switch to encrypted" (STARTTLS)
+# Port 465 is encrypted from the start. (Gmail's other door, 587, starts plain and then
+# switches with STARTTLS, but some networks block it, so Smart uses 465.)
+SMTP_PORT = 465
 
 
 def when_text(days_left):
@@ -62,7 +64,7 @@ def build_reminder(to_address, sub, card_nickname, days_left):
 
 
 def send(msg):
-    """Step 3 and 4: connect to Gmail, encrypt, log in, hand over the message.
+    """Step 3 and 4: connect to Gmail securely, log in, hand over the message.
 
     Returns True if Gmail accepted it, False otherwise (the reason is printed in the terminal).
     """
@@ -73,8 +75,7 @@ def send(msg):
         return False
 
     try:
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as server:
-            server.starttls()  # from here on, everything is encrypted
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=20) as server:  # encrypted from the start
             try:
                 server.login(address, app_password.replace(" ", ""))
             except smtplib.SMTPException:

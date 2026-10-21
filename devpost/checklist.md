@@ -39,22 +39,22 @@ Build mode: learn
   Learner check: Add a second card ("Main card") with a trial on it. Swipe between the two cards: the list and card total should change with each, and the trial should say "Trial" and sit at the top. Tell me what you notice about the look and feel, and what you'd change.
   Commit: `Add swipeable card carousel with polished cards and row details`
 
-- [ ] **4. Saving something due soon emails you right away, and Smart keeps watching deadlines**
-  Becomes usable: Saving a subscription whose deadline is today, tomorrow, or in 2 days sends the reminder email immediately (the demo path). The server also checks every hour and on startup, sends the 2-day and 1-day reminders exactly once, and never for cancelled subscriptions. If Gmail fails, the subscription still saves with a soft note.
+- [x] **4. Reminders arrive at the time you chose, on their own**
+  Becomes usable: Each subscription has a "Remind me at" time. After saving, Smart either sends the reminder right away (already due) or says when it will arrive ("Reminder set for 14:32 today"), and the server's once-a-minute check sends it at that time without anyone touching the app. The 2-day, 1-day and "today" reminders each go out exactly once, never for cancelled subscriptions. If Gmail fails, the subscription still saves with a soft note and the next check retries.
   Why now: This connects the email from slice 1 to real subscriptions — the moment Smart becomes useful on its own. It needs subscriptions and cards to exist first.
   PRD ref: `prd.md > Reminder Emails`, `prd.md > The Core Journey` (step 6)
   Spec ref: `spec.md > Reminder logic — reminders.py`, `spec.md > Mailer — mailer.py`, `spec.md > Important Failure Modes`, `spec.md > Data Model` (`last_reminded_days`)
-  Build: `reminders.py` (`days_left`, the send rule, `check_one`, `check_all`, `start_watcher` background thread started once, not doubled by reload); call `check_one` after saving a subscription and return `reminder: sent | not_due | failed`; show "Reminder sent" or the soft failure note in the app.
-  Verify (mechanical): Unit-style checks of the rule with a stubbed mailer (2 days → send, then 1 day → send, same day again → no send, 0 days with none sent → send, past due → no send, cancelled → skip, failure → not marked sent); a real save of a subscription due today through the API sends one real email and returns `reminder: "sent"`; restarting the server does not resend it.
-  Learner check: In Smart, add "Netflix, free trial, expires today" with its plans link. You should see a "reminder sent" note, and within a minute the email should be in your Gmail with the Netflix link. Restart the server — no second email.
-  Commit: `Send reminders on save and watch deadlines hourly`
+  Build: `reminder_time` column (added to an existing `smart.db` automatically); "Remind me at" field in the form with validation on both sides; `reminders.py` (`next_reminder`, `check_one`, `check_all`, a lock against double sends, `start_watcher` background thread checking every 60 seconds, started once); call `check_one` after saving and return `reminder: sent | scheduled | not_due | failed` with `reminder_at`; show a soft note in the app (sent / set for a time / couldn't send).
+  Verify (mechanical): Unit-style checks of the rule with a stubbed mailer and fixed clocks (2 days before the time → scheduled, at/after the time → send once, then 1 day → send, same day again → no send, today with none sent → send, today after an earlier reminder → nothing, past due → no send, cancelled → skip, failure → not marked sent and retried); a real save through the API with a reminder time 1–2 minutes ahead returns `scheduled` and the background watcher sends one real email at that time; a save due today with the time already passed returns `sent`; restarting the server does not resend.
+  Learner check: In Smart, add "Netflix, free trial, expires today" with its plans link and "Remind me at" set two minutes from now. You should see "Reminder set for …". Leave Smart alone; at that time the email should arrive in Gmail with the Netflix link. Restart the server — no second email.
+  Commit: `Send reminders at their chosen time and watch deadlines every minute`
 
 - [ ] **5. "Have you cancelled this?" — cancel it or say it renewed**
   Becomes usable: Anything due within 2 days or past due rises into a "Needs attention" section at the top of Home. "Yes, cancelled" removes it from the active list and the card and overall totals drop. "It renewed" asks for the next billing date; it goes back to active with the new date and reminders resume for it.
   Why now: This closes the core loop — reminder → act → totals drop — which is the success moment of the demo.
   PRD ref: `prd.md > In-App Reminder and the "Needs Check" Loop`, `prd.md > Monthly Totals`
   Spec ref: `spec.md > Home screen — static/js/screens/home.js`, `spec.md > Forms — static/js/screens/forms.js` (renew sheet), `spec.md > API Routes` (cancel, renew), `spec.md > Reminder logic — reminders.py`
-  Build: `POST /api/subscriptions/<id>/cancel` and `/renew` (renew sets the new deadline, clears `last_reminded_days`, runs `check_one`); Needs attention section with both actions; renew date sheet; totals redraw.
+  Build: `POST /api/subscriptions/<id>/cancel` and `/renew` (renew sets the new deadline, keeps the reminder time, clears `last_reminded_days`, runs `check_one`); Needs attention section with both actions; renew date sheet; totals redraw.
   Verify (mechanical): API checks that cancel sets `status=cancelled` and `cancelled_on`, renew updates the deadline and clears `last_reminded_days`, and a renewed date within 2 days triggers a reminder; `format.js` `needsAttention` returns true for 2/1/0/past-due active subscriptions and false for cancelled; page loads with no console errors and the section appears only when needed.
   Learner check: Your Netflix from step 4 should now sit at the top asking "Have you cancelled this?" Tap "Yes, cancelled" — it disappears and the totals drop. Add another short trial, tap "It renewed," pick a date a month away — it returns to the normal list with the new date.
   Commit: `Add needs-attention check with cancel and renew`
@@ -64,7 +64,7 @@ Build mode: learn
   Why now: Rows stay minimal by design, so details and editing come once the main loop works.
   PRD ref: `prd.md > Screens and Layout` (Subscription details), `prd.md > Adding and Editing Subscriptions` (editing)
   Spec ref: `spec.md > Details screen — static/js/screens/details.js`, `spec.md > Forms — static/js/screens/forms.js`, `spec.md > API Routes` (`PUT /api/subscriptions/<id>`, `PUT /api/cards/<id>`)
-  Build: `screens/details.js`; edit mode for the subscription and card forms; the two PUT routes with validation, clearing `last_reminded_days` when the deadline changes and running `check_one`; URL-hash navigation so the back button works.
+  Build: `screens/details.js`; edit mode for the subscription and card forms; the two PUT routes with validation, clearing `last_reminded_days` when the deadline or reminder time changes and running `check_one`; URL-hash navigation so the back button works.
   Verify (mechanical): API checks that both PUT routes update fields, reject invalid input with 400, and that a changed deadline clears `last_reminded_days`; in the browser, open a details view, edit the cost, and confirm Home and totals reflect it with no console errors; browser back returns to Home.
   Learner check: Tap a subscription, check the details read clearly, tap Edit, change its price, save — Home and the totals should show the new price. Tap the cancel link in details and it should open the service's page.
   Commit: `Add subscription details and editing`
@@ -101,3 +101,6 @@ Reflection: [offered/answered/declined/already covered — personal answer belon
 Activity mode: [live app and editor, explicit static fallback, focused alternative, prior practice, or recap]
 
 ## Revisions
+
+- Added a per-subscription "Remind me at" time and changed the deadline check from hourly to every minute (PRD Reminder Emails, spec Reminder logic/Data Model/API, slice 4) — at the early checkpoint the learner found that "expires today" only proves send-on-save; for a real live demo they want to watch a reminder arrive on its own at a chosen time. They chose per subscription over one global time. Automatic time-zone detection stays for later: the server uses the laptop's clock, which is already the learner's time zone.
+- Switched the mailer from port 587 (STARTTLS) to port 465 (SSL) (spec Mailer, External Services) — during slice 4, Gmail's port 587 started timing out on the learner's network while 465 connected instantly; same four steps, encryption just starts immediately.
