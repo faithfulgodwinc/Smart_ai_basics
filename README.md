@@ -82,6 +82,18 @@ static/js/          Screens, formatting and totals, talking to the server
 static/css/         The card look, the floating nav, sheets, motion
 ```
 
+## How it was planned
+
+Smart was planned before it was built. The planning documents live in [`devpost/`](devpost/):
+
+- [`scope.md`](devpost/scope.md): the idea, the unique kernel, and what was cut
+- [`prd.md`](devpost/prd.md): the core journey and every behavior
+- [`spec.md`](devpost/spec.md): the technical blueprint
+- [`checklist.md`](devpost/checklist.md): the build, slice by slice, with every change of plan under **Revisions**
+- [`app-map.html`](devpost/app-map.html): a one-page guide to what powers what (download and open it in a browser)
+
+The `.md` files are the current versions. The `.html` files are snapshots from the planning reviews, made before the build changed a few details.
+
 ## Limits of this proof of concept
 
 - It runs on your own laptop, for one person, in one browser. There are no accounts.
