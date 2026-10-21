@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart — App Map</title>
+<style>
+  :root { --paper:#fff; --mist:#f5f5f4; --line:#e7e5e4; --graphite:#6b6b6b; --ink:#0a0a0a; }
+  @media (prefers-color-scheme: dark) { :root { --paper:#0f0f0f; --mist:#1b1b1b; --line:#2c2c2c; --graphite:#a3a3a3; --ink:#f5f5f4; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.6 -apple-system,"SF Pro Text",Inter,"Segoe UI",system-ui,sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:48px 20px 80px; }
+  h1 { font-size:40px; letter-spacing:-0.02em; line-height:1.1; margin:8px 0 12px; }
+  h2 { font-size:22px; letter-spacing:-0.01em; margin:48px 0 12px; }
+  .eyebrow { font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:var(--graphite); margin:0; }
+  .lead { color:var(--graphite); font-size:18px; margin:0; }
+  code { font:14px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace; background:var(--mist); padding:2px 6px; border-radius:6px; }
+  pre { background:var(--mist); padding:14px 16px; border-radius:12px; overflow-x:auto; margin:10px 0 0; }
+  pre code { background:none; padding:0; }
+  .pieces { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); padding:0; list-style:none; }
+  .pieces li { background:var(--mist); border-radius:16px; padding:14px 16px; }
+  .pieces b { display:block; }
+  .pieces span { color:var(--graphite); font-size:14px; }
+  figure { margin:16px 0 0; background:var(--mist); border-radius:16px; padding:16px; }
+  figure svg { width:100%; height:auto; display:block; }
+  figcaption { color:var(--graphite); font-size:14px; margin-top:8px; }
+  ol.route { padding-left:0; list-style:none; counter-reset:stop; }
+  ol.route > li { counter-increment:stop; border-top:1px solid var(--line); padding:16px 0 16px 48px; position:relative; }
+  ol.route > li::before { content:counter(stop); position:absolute; left:0; top:16px; width:32px; height:32px; border-radius:999px; background:var(--ink); color:var(--paper); display:grid; place-items:center; font-weight:600; font-size:14px; }
+  .where { color:var(--graphite); font-size:14px; }
+  table { width:100%; border-collapse:collapse; }
+  td { border-top:1px solid var(--line); padding:12px 8px 12px 0; vertical-align:top; }
+  td:first-child { width:42%; }
+  details { border-top:1px solid var(--line); padding:12px 0; }
+  summary { cursor:pointer; font-weight:500; }
+  summary:focus-visible, a:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+  .practice { background:var(--mist); border-radius:16px; padding:18px 20px; }
+  .practice p { margin:8px 0; }
+  .note { color:var(--graphite); font-size:14px; }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">Smart · App Map</p>
+  <h1>What powers what</h1>
+  <p class="lead">Smart tracks trials and subscriptions by the card they charge, and emails a reminder before you're billed, at the time you choose, with the exact place to cancel.</p>
+
+  <h2>The main pieces</h2>
+  <ul class="pieces">
+    <li><b>The app</b><span>Screens in your browser. <code>templates/index.html</code>, <code>static/js/</code></span></li>
+    <li><b>The server</b><span>Saves data, answers the app. <code>app.py</code></span></li>
+    <li><b>The database</b><span>One file, <code>smart.db</code>. Only <code>db.py</code> touches it.</span></li>
+    <li><b>The watcher</b><span>Decides <i>when</i> to remind. <code>reminders.py</code></span></li>
+    <li><b>The mailer</b><span>Writes and sends the email. <code>mailer.py</code> + Gmail</span></li>
+  </ul>
+
+  <h2>One action, end to end: saving something that's due → the email</h2>
+  <figure>
+    <svg viewBox="0 0 720 230" role="img" aria-labelledby="flow-title flow-desc">
+      <title id="flow-title">The path of a reminder</title>
+      <desc id="flow-desc">You tap Save in the form. The browser posts to the server. The server saves to smart.db and asks reminders.py whether a reminder is due. If it is, mailer.py sends it through Gmail to your inbox, and the server records that it was sent. Every minute the watcher runs the same check on its own.</desc>
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0 10 5 0 10z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <g fill="none" stroke="currentColor" stroke-width="1.5" color="#6b6b6b">
+        <rect x="10" y="20" width="120" height="58" rx="14"/>
+        <rect x="170" y="20" width="120" height="58" rx="14"/>
+        <rect x="330" y="20" width="140" height="58" rx="14"/>
+        <rect x="510" y="20" width="110" height="58" rx="14"/>
+        <rect x="170" y="140" width="120" height="58" rx="14"/>
+        <rect x="330" y="140" width="140" height="58" rx="14"/>
+        <rect x="640" y="20" width="72" height="58" rx="14"/>
+        <path d="M130 49h36" marker-end="url(#arrow)"/>
+        <path d="M290 49h36" marker-end="url(#arrow)"/>
+        <path d="M470 49h36" marker-end="url(#arrow)"/>
+        <path d="M620 49h16" marker-end="url(#arrow)"/>
+        <path d="M230 78v58" marker-end="url(#arrow)"/>
+        <path d="M400 136V82" marker-end="url(#arrow)" stroke-dasharray="5 5"/>
+      </g>
+      <g font-family="-apple-system,Segoe UI,sans-serif" font-size="14" text-anchor="middle" fill="currentColor">
+        <text x="70" y="45" font-weight="600">You tap Save</text><text x="70" y="64" font-size="12" opacity=".7">forms.js</text>
+        <text x="230" y="45" font-weight="600">Server</text><text x="230" y="64" font-size="12" opacity=".7">app.py</text>
+        <text x="400" y="45" font-weight="600">Is it due?</text><text x="400" y="64" font-size="12" opacity=".7">reminders.py</text>
+        <text x="565" y="45" font-weight="600">Send</text><text x="565" y="64" font-size="12" opacity=".7">mailer.py</text>
+        <text x="676" y="45" font-weight="600">Inbox</text><text x="676" y="64" font-size="12" opacity=".7">Gmail</text>
+        <text x="230" y="165" font-weight="600">Saved</text><text x="230" y="184" font-size="12" opacity=".7">db.py → smart.db</text>
+        <text x="400" y="165" font-weight="600">Every minute</text><text x="400" y="184" font-size="12" opacity=".7">start_watcher</text>
+      </g>
+    </svg>
+    <figcaption>The dashed line is the background watcher: it runs the same "is it due?" check every minute, without anyone touching the app.</figcaption>
+  </figure>
+
+  <h2>The route through the code</h2>
+  <p class="note">Followed during the wrap-up. Line numbers can drift as code changes; the names in <code>code</code> are stable things to search for.</p>
+  <ol class="route">
+    <li><b>You tap Save.</b> The form gathers what you typed and posts it to the server.
+      <div class="where"><code>static/js/screens/forms.js</code> → search <code>api.saveSubscription(values)</code>; the request itself is <code>saveSubscription</code> in <code>static/js/api.js</code></div></li>
+    <li><b>The server saves it, then asks whether a reminder is due.</b> Saving and reminding are kept separate on purpose.
+      <div class="where"><code>app.py</code> → <code>post_subscription</code>, the line <code>reminders.check_one(...)</code></div></li>
+    <li><b>Deciding when.</b> <code>next_reminder</code> finds the next moment (2 days before, 1 day before, or "today", at your chosen time, in your time zone). If it has passed, the mailer is called; only if Gmail accepts is it recorded, so failures retry and successes never repeat.
+      <div class="where"><code>reminders.py</code> → <code>next_reminder</code>, <code>_check</code> (which calls <code>db.mark_reminded</code> in <code>db.py</code>); the every-minute loop is <code>start_watcher</code></div></li>
+    <li><b>Sending.</b> Fill in the email templates, open an encrypted connection to Gmail, log in with the app password, hand over the message.
+      <div class="where"><code>mailer.py</code> → <code>build_reminder</code> (the subject line), <code>send</code> (<code>SMTP_SSL</code>, <code>login</code>, <code>send_message</code>)</div>
+      <pre><code>with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=20) as server:
+    server.login(address, app_password.replace(&quot; &quot;, &quot;&quot;))
+    server.send_message(msg)</code></pre></li>
+  </ol>
+
+  <h2>To change this, start here</h2>
+  <table>
+    <tr><td>The email's subject line</td><td><code>mailer.py</code> → <code>msg[&quot;Subject&quot;]</code> in <code>build_reminder</code>. It now reads "Heads up: Netflix renews tomorrow" (changed during the wrap-up).</td></tr>
+    <tr><td>The email's words and button</td><td><code>templates/email/reminder.html</code> and <code>reminder.txt</code></td></tr>
+    <tr><td>Remind 3 days before, or another rule</td><td><code>reminders.py</code> → the <code>(2, 1, 0)</code> list in <code>reminder_moments</code></td></tr>
+    <tr><td>How often the watcher checks</td><td><code>reminders.py</code> → <code>CHECK_EVERY_SECONDS</code></td></tr>
+    <tr><td>Colours and the card look</td><td><code>templates/index.html</code> → <code>@theme</code>; <code>static/css/styles.css</code> → <code>.bank-card</code></td></tr>
+    <tr><td>What a screen shows</td><td><code>static/js/screens/</code> → <code>home.js</code>, <code>details.js</code>, <code>profile.js</code>, <code>history.js</code>, <code>landing.js</code></td></tr>
+    <tr><td>Form checks (cost, dates, links)</td><td>Browser: <code>checkSubscription</code> in <code>forms.js</code>. Server: <code>subscription_fields</code> in <code>app.py</code>. Change both.</td></tr>
+    <tr><td>Sending from a different email service</td><td>Only <code>mailer.py</code>; nothing else needs to change.</td></tr>
+  </table>
+
+  <h2>A practice to reuse</h2>
+  <div class="practice">
+    <p><b>Prove the riskiest unknown with a tiny test of its own, before anything depends on it, and when something breaks, test one layer at a time.</b></p>
+    <p>In this build, the first step was <code>send_test_email.py</code>: one real email through Gmail before the app existed. Later, when reminders stopped arriving, a separate connection test showed Gmail's port 587 timing out while port 465 connected instantly. That proved it was the network, not the code, and the fix was one line in <code>mailer.py</code> (recorded under Revisions in <code>devpost/checklist.md</code>). Another missing email turned out to be a server still running old code plus a reminder address nobody could see in the app, which is why Smart now shows "Reminders go to …".</p>
+    <p>On your next project, ask early: <i>which part could sink the whole idea?</i> Write the smallest script that proves it works, and keep it around for when it doesn't.</p>
+  </div>
+
+  <h2>Run it again</h2>
+<pre><code>.venv\Scripts\activate
+python app.py
+# then open http://localhost:5000
+python send_test_email.py you@example.com   # just the email</code></pre>
+  <p class="note">After changing code, stop the server (Ctrl+C) and start it again: a running server keeps the code it started with.</p>
+
+  <details>
+    <summary>About this map</summary>
+    <p class="note">A snapshot of the code at commit <code>b4b7681</code> ("Use a friendlier reminder subject line"). It can drift as the code changes; the file names and function names above are the reliable anchors.</p>
+  </details>
+</main>
+</body>
+</html>

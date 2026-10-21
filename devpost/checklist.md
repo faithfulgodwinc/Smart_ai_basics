@@ -96,13 +96,13 @@ Build mode: learn
 
 - [ ] Learning activity complete — guided route, focused alternative, prior practice connected, or brief recap
 - [ ] Optional edit and transfer reflection addressed — offered/declined/already covered/not applicable as appropriate
-- [ ] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
+- [x] `devpost/app-map.html` generated from finished code, checked, and shown, including a project-grounded practice to reuse
 
-Activity and evidence: [what actually happened; real document/test/code references; unfinished work if interrupted]
-Route and stops: [actual paths and symbols; guided stops completed, or reference-only route]
-Edit outcome: [tried/kept/reverted/declined/not applicable; verification if changed]
-Reflection: [offered/answered/declined/already covered — personal answer belongs only in the ignored profile]
-Activity mode: [live app and editor, explicit static fallback, focused alternative, prior practice, or recap]
+Activity and evidence: Guided route offered, tied to the learner's goal of understanding how email sending works: follow "save a subscription that's due" to the email. Stops were shared with live links; the learner engaged with the optional edit (liked the "Heads up" subject idea). Whether they walked every stop in the editor wasn't confirmed. Practice connected to real build evidence: `send_test_email.py` proving Gmail first (slice 1), and the port 587/465 connection test that separated a network problem from a code problem (Revisions).
+Route and stops: `static/js/screens/forms.js` `api.saveSubscription(values)` → `static/js/api.js` `saveSubscription` → `app.py` `post_subscription` / `reminders.check_one` → `reminders.py` `next_reminder`, `_check` (`db.mark_reminded`) → `mailer.py` `build_reminder`, `send` (`SMTP_SSL`, `login`, `send_message`). Shared as a guided route; completion of each stop not confirmed.
+Edit outcome: Kept. Learner chose the "Heads up" subject idea; the agent applied it at their request (`mailer.py` `build_reminder`: "Heads up: {name} renews {when}"). Verified all three subjects (in 2 days / tomorrow / today) render; committed b4b7681.
+Reflection: offered.
+Activity mode: live app and editor (guided route with clickable code links).
 
 ## Revisions
 
