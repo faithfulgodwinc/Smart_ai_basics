@@ -79,7 +79,7 @@ Build mode: learn
   Learner check: Open Smart in a private window — you should see the landing page first. Tap through, open Profile, change your reminder email, and open Cancelled history: Netflix should be there with its card and the date you cancelled it.
   Commit: `Add landing page, profile, and cancelled history`
 
-- [ ] **8. Every visitor gets their own private Smart, already filled in**
+- [x] **8. Every visitor gets their own private Smart, already filled in**
   Becomes usable: In demo mode (`DEMO_MODE=1`), the first visit gives that browser its own private space (a cookie, no sign-in), seeded with two cards, a few trials and subscriptions (one due tomorrow, one trial on the protected main card) and one cancelled item. Visitors never see each other's data. Without demo mode (your laptop), Smart works exactly as before, and your existing `smart.db` moves into a single local space with nothing lost.
   Why now: Hosting Smart for judges is unsafe without it (one shared notebook, one reminder email, anyone could use your Gmail), and every later slice builds on spaces.
   PRD ref: `prd.md > Live Demo for Judges`

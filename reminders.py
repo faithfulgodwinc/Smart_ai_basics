@@ -89,14 +89,15 @@ def check_one(sub_id, now=None):
 
 
 def check_all(now=None):
-    """Runs when the server starts and then every minute."""
+    """Runs when the server starts and then every minute, for every space."""
     with _lock:
-        now = now or local_now()
-        for sub in db.list_active_subscriptions():
-            try:
-                _check(sub, now)
-            except Exception as error:  # one broken subscription mustn't stop the others
-                print(f"[reminders] Couldn't check subscription {sub['id']}: {error}")
+        for sub in db.list_all_active_subscriptions():
+            # Each subscription is checked inside its own space: its email, its time zone.
+            with db.in_space(sub["space_id"]):
+                try:
+                    _check(sub, now or local_now())
+                except Exception as error:  # one broken subscription mustn't stop the others
+                    print(f"[reminders] Couldn't check subscription {sub['id']}: {error}")
 
 
 def start_watcher(app):

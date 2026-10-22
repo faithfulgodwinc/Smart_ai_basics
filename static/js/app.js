@@ -3,7 +3,7 @@
 // so the browser's back button works.
 
 import * as api from "./api.js";
-import { setTimeZone } from "./format.js";
+import { detectedTimeZone, setTimeZone } from "./format.js";
 import { renderHome } from "./screens/home.js";
 import { renderSubscriptionForm } from "./screens/forms.js";
 import { renderDetails } from "./screens/details.js";
@@ -12,6 +12,7 @@ import { renderProfile } from "./screens/profile.js";
 import { renderHistory } from "./screens/history.js";
 
 export const state = {
+  demo: false, // true on the live demo: each visitor has their own private, pre-filled Smart
   email: null,
   time_zone: null, // e.g. 'Africa/Lagos': dates and reminders follow this
   cards: [],
@@ -51,6 +52,10 @@ function show() {
 async function start() {
   try {
     Object.assign(state, await api.getState());
+    if (state.demo && !state.time_zone) {
+      // A demo visitor's reminders follow their own clock without asking.
+      Object.assign(state, await api.saveSettings({ time_zone: detectedTimeZone() }));
+    }
     setTimeZone(state.time_zone);
   } catch (error) {
     document.getElementById("home").hidden = false;

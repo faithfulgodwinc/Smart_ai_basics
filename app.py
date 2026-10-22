@@ -1,19 +1,57 @@
 """Smart's server: serves the app, answers its requests, and keeps the data.
 
 Start it with:  python app.py   then open http://localhost:5000
+
+Demo mode (DEMO_MODE=1, for the live link): every visitor gets their own private,
+pre-filled space, remembered by a cookie. No sign-in.
 """
 
 import os
 import re
+import secrets
 from datetime import date
 from zoneinfo import available_timezones
 
-from flask import Flask, jsonify, render_template, request
+from dotenv import load_dotenv
+from flask import Flask, g, jsonify, render_template, request
 
 import db
+import demo
 import reminders
 
+load_dotenv()
+DEMO_MODE = os.getenv("DEMO_MODE") == "1"
+SPACE_COOKIE = "smart_space"
+
 app = Flask(__name__)
+
+
+# --- Which space is this request for? ------------------------------------------
+
+@app.before_request
+def choose_space():
+    g.new_space = None
+    if not DEMO_MODE:
+        db.set_space(db.LOCAL)  # your own laptop: one space for everything
+        return
+    if request.endpoint == "static":
+        return  # files like app.js don't need a space
+    space_id = request.cookies.get(SPACE_COOKIE)
+    if not (space_id and db.space_exists(space_id)):
+        # A new visitor: give them their own private Smart, already filled in.
+        space_id = secrets.token_urlsafe(24)
+        db.create_space(space_id, is_demo=True)
+        demo.seed(space_id)
+        g.new_space = space_id
+    db.set_space(space_id)
+
+
+@app.after_request
+def remember_space(response):
+    if g.get("new_space"):
+        response.set_cookie(SPACE_COOKIE, g.new_space, max_age=60 * 60 * 24 * 180,
+                            httponly=True, samesite="Lax", secure=request.is_secure)
+    return response
 
 
 class InvalidInput(Exception):
@@ -135,6 +173,7 @@ def index():
 @app.get("/api/state")
 def get_state():
     return jsonify(
+        demo=DEMO_MODE,
         email=db.get_email(),
         time_zone=db.get_time_zone(),
         cards=db.list_cards(),
@@ -178,7 +217,7 @@ def put_card(card_id):
 
 @app.post("/api/subscriptions")
 def post_subscription():
-    if not db.get_email():
+    if not db.get_email() and not DEMO_MODE:  # in demo mode an email is optional
         raise InvalidInput("email", "Add the email where reminders should go.")
     if not db.get_time_zone():
         raise InvalidInput("time_zone", "Choose the time zone your reminders should follow.")

@@ -8,5 +8,6 @@
 
 # Local app data and Python environment
 smart.db
+*.db
 .venv/
 __pycache__/

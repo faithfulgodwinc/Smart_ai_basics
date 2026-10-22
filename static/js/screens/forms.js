@@ -22,7 +22,7 @@ export function renderSubscriptionForm(root, state, subId = null) {
     location.hash = "#home";
     return;
   }
-  const needsEmail = !state.email;
+  const needsEmail = !state.email && !state.demo; // demo reminders go to the Demo inbox
   const needsTimeZone = !state.time_zone;
   const backTo = editing ? `#details/${editing.id}` : "#home";
 
