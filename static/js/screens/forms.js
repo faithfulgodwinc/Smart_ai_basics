@@ -10,6 +10,12 @@ import { toast } from "../toast.js";
 import { dateField, setPickerValue, timeField, wirePickers } from "../pickers.js";
 
 const NEW_CARD = "__new";
+
+// The guided tour can hand the add form a ready-made subscription to show, filled in.
+let pendingDraft = null;
+export function setFormDraft(draft) {
+  pendingDraft = draft;
+}
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -108,6 +114,18 @@ export function renderSubscriptionForm(root, state, subId = null) {
     setPickerValue(inputs.reminder_time, editing.reminder_time);
     inputs.source_value.value = editing.source_value;
     chooseSource(editing.source_type, true);
+    showTrialLabel();
+  } else if (pendingDraft) {
+    const draft = pendingDraft;
+    pendingDraft = null;
+    inputs.name.value = draft.name;
+    inputs.monthly_cost.value = draft.monthly_cost;
+    inputs.is_trial.checked = draft.is_trial;
+    setPickerValue(inputs.deadline, draft.deadline);
+    setPickerValue(inputs.reminder_time, draft.reminder_time);
+    if (draft.card_id) inputs.card_id.value = String(draft.card_id);
+    chooseSource(draft.source_type, true);
+    inputs.source_value.value = draft.source_value;
     showTrialLabel();
   }
 
@@ -306,7 +324,7 @@ export function openRenewSheet(sub, state, onRenewed) {
 
 // --- Reminder settings (email + time zone) -----------------------------------
 
-function applySettings(state, settings) {
+export function applySettings(state, settings) {
   state.email = settings.email;
   state.time_zone = settings.time_zone;
   setTimeZone(settings.time_zone);

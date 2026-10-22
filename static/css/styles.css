@@ -320,3 +320,6 @@
   animation: fade-in 260ms var(--ease);
   transition: top 300ms var(--ease), left 300ms var(--ease);
 }
+.tour-blocker.is-dim { background: rgba(10, 10, 10, 0.42); animation: fade 200ms var(--ease); }
+.tour-card .field-input { background: var(--paper); border-color: var(--line); }
+.tour-card .field-input:focus { border-color: var(--ink); }

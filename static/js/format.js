@@ -124,3 +124,8 @@ export function reminderDestination(state) {
   if (state.demo) return state.email ? `your Demo inbox and ${state.email}` : "your Demo inbox";
   return state.email || "";
 }
+
+// The current wall-clock time in a time zone, as a Date whose fields read in that zone.
+export function nowInTimeZone(timeZone, now = new Date()) {
+  return timeZone ? new Date(now.toLocaleString("en-US", { timeZone })) : now;
+}

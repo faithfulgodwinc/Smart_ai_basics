@@ -68,7 +68,7 @@ function show() {
   }
   window.scrollTo(0, 0);
   // First visit (or a replay from Profile): show the guided tour once Home has something to show.
-  if (target === "home" && !tourDone() && state.cards.length) setTimeout(startTour, 400);
+  if (target === "home" && !tourDone() && state.cards.length) setTimeout(() => startTour(state), 400);
 }
 
 async function start() {
