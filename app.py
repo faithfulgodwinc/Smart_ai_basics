@@ -181,10 +181,17 @@ def get_state():
     )
 
 
+@app.get("/api/inbox")
+def get_inbox():
+    return jsonify(items=db.list_inbox())
+
+
 @app.put("/api/settings")
 def put_settings():
     """Updates the reminder email and/or the time zone (whichever is sent)."""
     body = request.get_json(silent=True) or {}
+    if DEMO_MODE and str(body.get("email") or "").strip() == "":
+        body.pop("email", None)  # in demo mode the email is optional: leave it empty
     email = valid_email(body) if "email" in body else None
     time_zone = valid_time_zone(body) if "time_zone" in body else None
     if email:

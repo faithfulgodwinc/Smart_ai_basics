@@ -10,12 +10,15 @@ import { renderDetails } from "./screens/details.js";
 import { hasSeenLanding, renderLanding } from "./screens/landing.js";
 import { renderProfile } from "./screens/profile.js";
 import { renderHistory } from "./screens/history.js";
+import { lastSeenInboxId, renderInbox } from "./screens/inbox.js";
+import { toast } from "./toast.js";
 
 export const state = {
   demo: false, // true on the live demo: each visitor has their own private, pre-filled Smart
   email: null,
   time_zone: null, // e.g. 'Africa/Lagos': dates and reminders follow this
   cards: [],
+  inbox: [], // demo mode: reminders shown in the Demo inbox, newest first
   subscriptions: [],
   currentCardId: null, // which card Home is showing
 };
@@ -28,10 +31,11 @@ const screens = {
   landing: renderLanding,
   profile: renderProfile,
   history: renderHistory,
+  inbox: renderInbox,
 };
 
 // Screens that belong to a nav button: details and edit live under Home, history under Profile.
-const NAV_SECTION = { details: "home", edit: "home", history: "profile" };
+const NAV_SECTION = { details: "home", edit: "home", history: "profile", inbox: "home" };
 
 function show() {
   const [name, id] = (location.hash.slice(1) || "home").split("/");
@@ -73,6 +77,31 @@ async function start() {
     location.replace(link.getAttribute("href"));
   });
   show();
+  if (state.demo) watchInbox();
+}
+
+// Demo mode: while Smart is open, check every 20 seconds for a reminder that just arrived.
+async function watchInbox() {
+  let newest = null; // the newest reminder id we know about (null until the first check)
+  const check = async () => {
+    try {
+      const { items } = await api.getInbox();
+      state.inbox = items;
+      const latest = items[0];
+      const arrived = newest !== null && latest && latest.id > newest;
+      if (arrived && !location.hash.startsWith("#inbox")) {
+        toast(`New reminder: ${latest.subject}`, { href: `#inbox/${latest.id}`, label: "Open" });
+      }
+      newest = latest ? latest.id : 0;
+      for (const dot of document.querySelectorAll("[data-inbox-dot]")) {
+        dot.hidden = !(latest && latest.id > lastSeenInboxId());
+      }
+    } catch {
+      // the server may be restarting: try again next time
+    }
+  };
+  await check();
+  setInterval(check, 20000);
 }
 
 start();

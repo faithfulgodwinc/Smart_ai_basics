@@ -118,3 +118,9 @@ export function todayIso(today = todayInTimeZone()) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 }
+
+// Where reminders go, in words: "your Demo inbox", "your Demo inbox and you@x.com", or "you@x.com".
+export function reminderDestination(state) {
+  if (state.demo) return state.email ? `your Demo inbox and ${state.email}` : "your Demo inbox";
+  return state.email || "";
+}

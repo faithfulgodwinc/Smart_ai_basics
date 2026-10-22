@@ -4,7 +4,7 @@
 import * as api from "../api.js";
 import { ApiError } from "../api.js";
 import {
-  allTimeZones, cleanMoney, detectedTimeZone, escapeHtml, todayIso, reminderAtText, setTimeZone, timeZoneLabel,
+  allTimeZones, cleanMoney, detectedTimeZone, escapeHtml, todayIso, reminderAtText, reminderDestination, setTimeZone, timeZoneLabel,
 } from "../format.js";
 import { toast } from "../toast.js";
 import { dateField, setPickerValue, timeField, wirePickers } from "../pickers.js";
@@ -162,14 +162,14 @@ export function renderSubscriptionForm(root, state, subId = null) {
         const result = await api.updateSubscription(editing.id, values);
         state.subscriptions = state.subscriptions.map((sub) => (sub.id === editing.id ? result.subscription : sub));
         location.replace(`#details/${editing.id}`); // so Back doesn't reopen the form
-        toast(reminderNote(result, state.email).replace("Saved.", "Changes saved."));
+        toast(reminderNote(result, state).replace("Saved.", "Changes saved."));
         return;
       }
       const result = await api.saveSubscription(values);
       state.subscriptions.push(result.subscription);
       state.currentCardId = result.subscription.card_id;
       location.hash = "#home";
-      toast(reminderNote(result, state.email));
+      toast(reminderNote(result, state));
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
       showErrors(root, { [error.field || "form"]: error.message });
@@ -214,9 +214,10 @@ export function checkSettings(settings) {
 }
 
 // What happened to the reminder when this subscription was saved.
-export function reminderNote({ reminder, reminder_at: reminderAt }, email) {
-  if (reminder === "sent") return `Saved. Reminder sent to ${email}.`;
-  if (reminder === "scheduled") return `Saved. Reminder set for ${reminderAtText(reminderAt)}, to ${email}.`;
+export function reminderNote({ reminder, reminder_at: reminderAt }, state) {
+  const destination = reminderDestination(state);
+  if (reminder === "sent") return `Saved. Reminder sent to ${destination}.`;
+  if (reminder === "scheduled") return `Saved. Reminder set for ${reminderAtText(reminderAt)}, to ${destination}.`;
   if (reminder === "failed") return "Saved. The reminder email couldn't be sent — check the email settings in .env.";
   return "Saved.";
 }
@@ -295,7 +296,7 @@ export function openRenewSheet(sub, state, onRenewed) {
       const result = await api.renewSubscription(sub.id, deadline);
       close();
       onRenewed(result.subscription);
-      toast(reminderNote(result, state.email).replace("Saved.", `${sub.name} is active again.`));
+      toast(reminderNote(result, state).replace("Saved.", `${sub.name} is active again.`));
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
       showErrors(sheet, { [error.field || "form"]: error.message });
@@ -314,12 +315,12 @@ function applySettings(state, settings) {
 // "Reminders go to you@gmail.com · Lagos time (GMT+1) · Change"
 function showReminderSettingsLine(root, state) {
   const line = root.querySelector("#reminder-settings-line");
-  if (!state.email || !state.time_zone) {
+  if (!reminderDestination(state) || !state.time_zone) {
     line.hidden = true;
     return;
   }
   line.hidden = false;
-  line.innerHTML = `Reminders go to <span class="text-ink">${escapeHtml(state.email)}</span>
+  line.innerHTML = `Reminders go to <span class="text-ink">${escapeHtml(reminderDestination(state))}</span>
     · ${escapeHtml(timeZoneLabel(state.time_zone))}
     · <button type="button" class="underline underline-offset-2 text-ink">Change</button>`;
   line.querySelector("button").onclick = () =>
@@ -333,7 +334,8 @@ export function openReminderSettings(state, onSaved = () => {}) {
     <h2 class="text-2xl font-semibold tracking-tight">Reminder settings</h2>
     <p class="mt-2 text-sm text-graphite">One email and one time zone for all your reminders.</p>
     <form novalidate class="mt-6 space-y-5">
-      ${emailField("Send reminders to", state.email || "")}
+      ${emailField(state.demo ? "Also email me (optional)" : "Send reminders to", state.email || "")}
+      ${state.demo ? `<p class="-mt-3 text-sm text-graphite">Reminders always land in your Demo inbox. Add an email to get real ones too, up to 5 a day.</p>` : ""}
       ${timeZoneField("Time zone", state.time_zone || detectedTimeZone())}
       <p class="field-error" data-error-for="form"></p>
       <button type="submit" class="btn-primary">Save</button>
@@ -347,13 +349,14 @@ export function openReminderSettings(state, onSaved = () => {}) {
       email: form.elements.email.value.trim(),
       time_zone: form.elements.time_zone.value.trim(),
     };
+    if (state.demo && !settings.email) delete settings.email; // optional in demo mode
     clearErrors(sheet);
     if (showErrors(sheet, checkSettings(settings))) return;
     try {
       applySettings(state, await api.saveSettings(settings));
       close();
       onSaved();
-      toast(`Reminders go to ${state.email}, on ${timeZoneLabel(state.time_zone)}.`);
+      toast(`Reminders go to ${reminderDestination(state)}, on ${timeZoneLabel(state.time_zone)}.`);
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
       showErrors(sheet, { [error.field || "form"]: error.message });

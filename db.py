@@ -79,6 +79,7 @@ def init_db():
         conn.execute("INSERT OR IGNORE INTO spaces (id, is_demo, created_at) VALUES (?, 0, ?)", (LOCAL, now()))
         conn.execute("CREATE INDEX IF NOT EXISTS cards_by_space ON cards (space_id)")
         conn.execute("CREATE INDEX IF NOT EXISTS subscriptions_by_space ON subscriptions (space_id)")
+        conn.execute("CREATE INDEX IF NOT EXISTS inbox_by_space ON inbox (space_id)")
 
 
 def now():
@@ -250,3 +251,38 @@ def renew(sub_id, deadline):
             (deadline, sub_id, current_space()),
         )
     return get_subscription(sub_id)
+
+
+def space_is_demo():
+    with connect() as conn:
+        row = conn.execute("SELECT is_demo FROM spaces WHERE id = ?", (current_space(),)).fetchone()
+    return bool(row and row["is_demo"])
+
+
+# --- Demo inbox -----------------------------------------------------------
+
+def add_inbox_item(subscription_id, subject, text_body, html_body, emailed):
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO inbox (space_id, subscription_id, subject, text_body, html_body, emailed, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (current_space(), subscription_id, subject, text_body, html_body, 1 if emailed else 0, now()),
+        )
+
+
+def list_inbox():
+    with connect() as conn:
+        rows = conn.execute("SELECT * FROM inbox WHERE space_id = ? ORDER BY id DESC", (current_space(),)).fetchall()
+    return [dict(row) for row in rows]
+
+
+def real_emails_sent_today(all_spaces=False):
+    """How many demo reminders went out as real emails today (this space, or every space)."""
+    today = datetime.now().date().isoformat()
+    with connect() as conn:
+        if all_spaces:
+            row = conn.execute("SELECT COUNT(*) FROM inbox WHERE emailed = 1 AND created_at >= ?", (today,)).fetchone()
+        else:
+            row = conn.execute("SELECT COUNT(*) FROM inbox WHERE emailed = 1 AND created_at >= ? AND space_id = ?",
+                               (today, current_space())).fetchone()
+    return row[0]

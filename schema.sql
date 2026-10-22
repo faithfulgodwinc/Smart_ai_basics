@@ -40,3 +40,15 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     last_reminded_days INTEGER,                   -- 2, 1, 0, or NULL = none sent for this deadline
     created_at         TEXT NOT NULL
 );
+
+-- Demo mode: every reminder lands here, shown in the app exactly as the email looks.
+CREATE TABLE IF NOT EXISTS inbox (
+    id              INTEGER PRIMARY KEY,
+    space_id        TEXT NOT NULL,
+    subscription_id INTEGER,
+    subject         TEXT NOT NULL,
+    text_body       TEXT NOT NULL,
+    html_body       TEXT NOT NULL,
+    emailed         INTEGER NOT NULL DEFAULT 0, -- 1 = also sent as a real email
+    created_at      TEXT NOT NULL
+);

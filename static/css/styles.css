@@ -300,3 +300,9 @@
   transition: color 150ms var(--ease), transform 150ms var(--ease);
 }
 .wheel-item.is-centre { color: var(--ink); font-weight: 600; transform: scale(1.06); }
+
+/* --- Demo inbox ---------------------------------------------------------------- */
+.inbox-dot { position: absolute; top: 7px; right: 7px; width: 8px; height: 8px; border-radius: 999px; background: var(--ink); box-shadow: 0 0 0 2px var(--mist); }
+.inbox-frame { width: 100%; height: 72dvh; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+.toast.is-shown { pointer-events: auto; }
+.toast-link { color: var(--paper); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; margin-left: 4px; }

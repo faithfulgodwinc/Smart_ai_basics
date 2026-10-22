@@ -1,6 +1,6 @@
 // Profile: a soft summary, where reminders go, and the way into Cancelled history.
 
-import { escapeHtml, formatMoney, isActive, overallTotal, timeZoneLabel } from "../format.js";
+import { escapeHtml, formatMoney, isActive, overallTotal, reminderDestination, timeZoneLabel } from "../format.js";
 import { openReminderSettings } from "./forms.js";
 
 export function renderProfile(root, state) {
@@ -23,13 +23,17 @@ export function renderProfile(root, state) {
       <div class="detail-row"><dt>Cards</dt><dd>${state.cards.length}</dd></div>
       <div class="detail-row">
         <dt>Reminders</dt>
-        <dd>${state.email ? escapeHtml(state.email) : "Not set yet"}
+        <dd>${reminderDestination(state) ? escapeHtml(reminderDestination(state)) : "Not set yet"}
           <span class="block text-sm text-graphite mt-1">${state.time_zone ? escapeHtml(timeZoneLabel(state.time_zone)) : ""}</span>
           <button type="button" data-settings class="block ml-auto mt-1 text-sm underline underline-offset-2">Change</button></dd>
       </div>
     </dl>
 
-    <a href="#history" class="row-link mt-6 flex items-center justify-between py-4 border-t border-b border-line">
+    ${state.demo ? `<a href="#inbox" class="row-link mt-6 flex items-center justify-between py-4 border-t border-line">
+      <span>Demo inbox</span>
+      <span class="text-graphite">&rarr;</span>
+    </a>` : ""}
+    <a href="#history" class="row-link ${state.demo ? "" : "mt-6"} flex items-center justify-between py-4 border-t border-b border-line">
       <span>Cancelled history</span>
       <span class="text-graphite">${cancelledCount} &rarr;</span>
     </a>`;

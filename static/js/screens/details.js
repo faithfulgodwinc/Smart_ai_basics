@@ -2,7 +2,7 @@
 
 import * as api from "../api.js";
 import {
-  daysLeft, escapeHtml, formatDate, formatMoney, timeLeftText, timeZoneLabel,
+  daysLeft, escapeHtml, formatDate, formatMoney, reminderDestination, timeLeftText, timeZoneLabel,
 } from "../format.js";
 import { openCardSheet, openRenewSheet } from "./forms.js";
 import { toast } from "../toast.js";
@@ -48,7 +48,7 @@ export function renderDetails(root, state, subId) {
         <div class="detail-row">
           <dt>Reminders</dt>
           <dd>${reminderClock}, 2 days and 1 day before
-            <span class="block text-sm text-graphite mt-1">to ${escapeHtml(state.email || "")}<br>${state.time_zone ? escapeHtml(timeZoneLabel(state.time_zone)) : ""}</span></dd>
+            <span class="block text-sm text-graphite mt-1">to ${escapeHtml(reminderDestination(state))}<br>${state.time_zone ? escapeHtml(timeZoneLabel(state.time_zone)) : ""}</span></dd>
         </div>` : `
         <div class="detail-row"><dt>Cancelled</dt><dd>${sub.cancelled_on ? formatDate(sub.cancelled_on) : ""}</dd></div>`}
       <div class="detail-row"><dt>How to cancel</dt><dd>${howToCancel}</dd></div>
