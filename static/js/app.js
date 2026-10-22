@@ -68,7 +68,8 @@ function show() {
   }
   window.scrollTo(0, 0);
   // First visit (or a replay from Profile): show the guided tour once Home has something to show.
-  if (target === "home" && !tourDone() && state.cards.length) setTimeout(() => startTour(state), 400);
+  // (On the demo it starts on an empty Home: the tour has the visitor build their Smart.)
+  if (target === "home" && !tourDone() && (state.cards.length || state.demo)) setTimeout(() => startTour(state), 400);
 }
 
 async function start() {

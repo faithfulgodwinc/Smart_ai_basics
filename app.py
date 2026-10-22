@@ -2,8 +2,8 @@
 
 Start it with:  python app.py   then open http://localhost:5000
 
-Demo mode (DEMO_MODE=1, for the live link): every visitor gets their own private,
-pre-filled space, remembered by a cookie. No sign-in.
+Demo mode (DEMO_MODE=1, for the live link): every visitor gets their own private
+space, remembered by a cookie. No sign-in.
 """
 
 import os
@@ -16,7 +16,6 @@ from dotenv import load_dotenv
 from flask import Flask, g, jsonify, render_template, request
 
 import db
-import demo
 import reminders
 
 load_dotenv()
@@ -43,10 +42,10 @@ def choose_space():
         return  # files like app.js don't need a space
     space_id = request.cookies.get(SPACE_COOKIE)
     if not (space_id and db.space_exists(space_id)):
-        # A new visitor: give them their own private Smart, already filled in.
+        # A new visitor: give them their own private Smart. It starts empty: the guided
+        # tour has them build their cards and trials themselves.
         space_id = secrets.token_urlsafe(24)
         db.create_space(space_id, is_demo=True)
-        demo.seed(space_id)
         g.new_space = space_id
     db.set_space(space_id)
 

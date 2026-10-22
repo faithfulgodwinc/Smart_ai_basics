@@ -16,6 +16,12 @@ let pendingDraft = null;
 export function setFormDraft(draft) {
   pendingDraft = draft;
 }
+
+// ...and the card sheet a ready-made card ({ nickname, bank, name_on_card }).
+let pendingCardDraft = null;
+export function setCardDraft(draft) {
+  pendingCardDraft = draft;
+}
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
@@ -259,10 +265,12 @@ export function openCardSheet({ card: existing = null, onSaved, onClosed = () =>
 
   const form = sheet.querySelector("form");
   const inputs = form.elements;
-  if (existing) {
-    inputs.nickname.value = existing.nickname;
-    inputs.bank.value = existing.bank;
-    inputs.name_on_card.value = existing.name_on_card;
+  const prefill = existing || pendingCardDraft;
+  pendingCardDraft = null;
+  if (prefill) {
+    inputs.nickname.value = prefill.nickname;
+    inputs.bank.value = prefill.bank;
+    inputs.name_on_card.value = prefill.name_on_card;
   }
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
