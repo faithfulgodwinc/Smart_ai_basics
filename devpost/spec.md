@@ -300,6 +300,17 @@ AI Basics/
 ### Python packages
 - `flask` 3.x ([docs](https://flask.palletsprojects.com/)), `python-dotenv` ([docs](https://pypi.org/project/python-dotenv/)), `tzdata` (the world's time-zone rules, which Windows doesn't ship to Python; [zoneinfo docs](https://docs.python.org/3/library/zoneinfo.html)). Everything else (`sqlite3`, `smtplib`, `email`, `threading`) is built into Python.
 
+## Live Demo Mode
+
+Added after the proof of concept, so judges can try Smart on a public link. Switched on with `DEMO_MODE=1`; without it Smart is the single-person laptop app described above.
+
+- **Spaces instead of sign-in.** A `spaces` table; every card, subscription, setting and inbox item belongs to one. A visitor's browser gets a random space id in a long-lived, HTTP-only cookie on first visit; the server only ever reads and writes that space. On a laptop everything lives in the `local` space, and an older `smart.db` is moved into it automatically.
+- **Sample data.** A new demo space is seeded with two cards (a protected "Main card" and a "Side card"), a few trials and subscriptions (one due tomorrow, one trial charging the main card), one cancelled item, and one reminder already in the Demo inbox.
+- **Demo inbox.** An `inbox` table stores every reminder for the space (subject, plain text, HTML, when). The reminder check stores it there in demo mode, and sends a real email only if the visitor gave an address and the space is under the daily cap. The app shows the HTML in a sandboxed frame and checks for new items while open.
+- **Time zone.** In demo mode the app sets the visitor's detected time zone automatically; they can change it in Reminder settings.
+- **Guided tour.** `static/js/tour.js`: a spotlight over existing Home and nav elements with Next/Skip, shown once per browser, replayable from Profile.
+- **Hosting.** An always-on host (the watcher must keep running), a persistent disk for `smart.db`, a production web server, and `.env` values set in the host's settings. Chosen with the learner in slice 10.
+
 ## Important Failure Modes
 
 - **Gmail refuses the login or the send** (wrong app password, 2-Step Verification off, no internet) → the subscription **still saves**. The app shows a soft note: "Saved. The reminder email couldn't be sent — check the email settings in `.env`." The server prints the exact error in the terminal, and the reminder isn't marked sent, so the next check (a minute later) retries. The first build step tests sending before anything else depends on it.

@@ -115,6 +115,13 @@ Five calm screens. Detail is kept tucked away until someone asks for it.
 - [ ] Every subscription marked cancelled appears there with its name, card, and the date it was cancelled.
 - [ ] Cancelled subscriptions don't count toward any totals.
 
+### Live Demo for Judges
+*(added after the proof of concept was built, for sharing a live link)*
+- [ ] Opening the live link needs no sign-in. Each visitor gets their own private Smart, already filled with realistic sample cards, trials and one cancelled item; nobody sees anyone else's.
+- [ ] Reminders arrive in a Demo inbox inside Smart, looking exactly like the email, at the time the visitor chose. Giving a real email is optional, and real emails are capped to protect the sender.
+- [ ] A short guided tour shows a first-time visitor around (card, totals, Needs attention, +, Profile), can be skipped, and can be replayed from Profile.
+- On a personal laptop (not demo mode), Smart behaves exactly as before.
+
 ## States and Boundaries
 
 - **First use:** the landing page, then an empty home with the floating nav bar and a gentle prompt to tap plus.

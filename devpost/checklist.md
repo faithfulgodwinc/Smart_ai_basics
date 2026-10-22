@@ -79,9 +79,50 @@ Build mode: learn
   Learner check: Open Smart in a private window — you should see the landing page first. Tap through, open Profile, change your reminder email, and open Cancelled history: Netflix should be there with its card and the date you cancelled it.
   Commit: `Add landing page, profile, and cancelled history`
 
+- [ ] **8. Every visitor gets their own private Smart, already filled in**
+  Becomes usable: In demo mode (`DEMO_MODE=1`), the first visit gives that browser its own private space (a cookie, no sign-in), seeded with two cards, a few trials and subscriptions (one due tomorrow, one trial on the protected main card) and one cancelled item. Visitors never see each other's data. Without demo mode (your laptop), Smart works exactly as before, and your existing `smart.db` moves into a single local space with nothing lost.
+  Why now: Hosting Smart for judges is unsafe without it (one shared notebook, one reminder email, anyone could use your Gmail), and every later slice builds on spaces.
+  PRD ref: `prd.md > Live Demo for Judges`
+  Spec ref: `spec.md > Live Demo Mode`, `spec.md > Data Model`
+  Build: `spaces` and `space_settings` tables; `space_id` on cards and subscriptions; automatic migration of an existing `smart.db` into the `local` space; every `db.py` query scoped to a space; the server picks the space from a cookie (demo) or uses `local`; reminders look up email and time zone per space; sample data seeded for new demo spaces; the app sets the visitor's detected time zone automatically in demo mode.
+  Verify (mechanical): Migration check on a copy of an old-format database (data kept, all in `local`); API checks that two different cookies see only their own cards and subscriptions and can't read or change each other's by id; a new demo space has the sample data; the reminder rule checks still pass; local mode (no `DEMO_MODE`) behaves as before; browser walkthrough of a fresh demo visit with a clean console.
+  Learner check: Run Smart in demo mode, open it in a normal window and in a private window: each should show its own sample Smart, and a change in one shouldn't appear in the other. Then run it normally and confirm your own data is all still there.
+  Commit: `Give every demo visitor a private, pre-filled space`
+
+- [ ] **9. Watch a reminder arrive in the Demo inbox**
+  Becomes usable: In demo mode, reminders land in a Demo inbox inside Smart, shown exactly as the email would look, at the time the visitor chose; the sample data already has one waiting. A visitor can optionally add their real email to also receive it, capped per space per day to protect the sender's Gmail. Smart notices new inbox items while open and says so.
+  Why now: Judges shouldn't have to hand over a real email to see the core promise, a reminder arriving on its own.
+  PRD ref: `prd.md > Live Demo for Judges`, `prd.md > Reminder Emails`
+  Spec ref: `spec.md > Live Demo Mode`, `spec.md > Reminder logic — reminders.py`
+  Build: `inbox` table; the reminder check stores each reminder in the inbox in demo mode and only sends real email when the space has an address and is under the cap; email optional in demo; inbox screen (list + the email rendered safely in a sandboxed frame); polling for new items with a calm note; "Reminders go to your Demo inbox" wording.
+  Verify (mechanical): Rule checks with a fake mailer (demo: stored in inbox, real email only with an address and under the cap; local: unchanged); a scheduled reminder 1–2 minutes ahead appears in the inbox via the background watcher; inbox items are private to their space; browser check of the inbox and the arrival note with a clean console.
+  Learner check: In demo mode, add a trial ending today with "Remind me at" two minutes ahead, leave Smart open, and watch the note appear; open the Demo inbox and read the reminder.
+  Commit: `Add the Demo inbox for reminders`
+
+- [ ] **10. Smart is live on the internet**
+  Becomes usable: A public link where anyone can open Smart in demo mode, with the reminder watcher always running and data kept across restarts.
+  Why now: Judges asked to try it directly; this only makes sense once visitors are kept separate (slices 8–9).
+  PRD ref: `prd.md > Live Demo for Judges`
+  Spec ref: `spec.md > Where It Runs and How Someone Tries It`, `spec.md > Live Demo Mode`
+  Build: Choose a host with the learner (always-on, persistent disk for `smart.db`, cost agreed first); a production web server; secrets set in the host's settings, never in code; `APP_URL` set to the live address; README deployment notes.
+  Verify (mechanical): The live URL loads without signing in; two fresh browsers get separate sample spaces; a reminder scheduled 1–2 minutes ahead lands in the Demo inbox on the live site; data survives a redeploy/restart; no secrets in the repository.
+  Learner check: Open the live link on your phone and in a private window on your laptop, try the core journey, and watch a reminder arrive in the Demo inbox.
+  Commit: `Deploy Smart for the live demo`
+
+- [ ] **11. A short guided tour on first visit**
+  Becomes usable: After the landing page, a soft spotlight walks a first-time visitor through the card, the totals, Needs attention, the + button and Profile, with Next and Skip; it shows once and can be replayed from Profile.
+  Why now: Last, because it's the most optional: if the night runs long, Smart ships without it and still works.
+  PRD ref: `prd.md > Live Demo for Judges`, `prd.md > Look and Feel`
+  Spec ref: `spec.md > Live Demo Mode`, `spec.md > Look and Feel`
+  Build: `static/js/tour.js` (spotlight, step card, Next/Skip/Done, seen-flag in the browser), steps tied to the existing Home and nav elements, "Replay tour" in Profile, styles in Smart's pressed-in look, respecting reduced motion.
+  Verify (mechanical): Browser walkthrough of every step on a fresh visit; it doesn't return after finishing or skipping; Replay works; keyboard (Esc/Enter) works; clean console.
+  Learner check: Open Smart in a private window, follow the tour to the end, then replay it from Profile.
+  Commit: `Add a first-visit guided tour`
+
 ## Hands-on Checkpoints
 
 - [x] Early usable behavior explored — after slice 3 (two cards, swiping, the card look), so feedback on the feel can shape the rest. Feedback: loved the look; asked for a reminder time so a live demo can show an email arriving on its own (see Revisions).
+- [ ] Live demo explored on the public link (after slices 8–11)
 - [x] Final kick-the-tires exploration and feedback completed (learner explored, asked for number-only cost, no past dates, and native-feeling pickers; all built, verified and retried)
 
 ## Final Review
@@ -110,3 +151,4 @@ Activity mode: live app and editor (guided route with clickable code links).
 - Switched the mailer from port 587 (STARTTLS) to port 465 (SSL) (spec Mailer, External Services) — during slice 4, Gmail's port 587 started timing out on the learner's network while 465 connected instantly; same four steps, encryption just starts immediately.
 - Added a time-zone setting (one for all reminders, pre-filled from the device, changeable in a Reminder settings sheet) and showed "Reminders go to … · [zone] · Change" in the add form and in the after-save note (PRD Core Journey/Reminder Emails/Profile, spec Reminder logic/API/Data Model, slice 4; Profile in slice 7 reuses the sheet) — while testing slice 4 the learner's laptop was set to US Pacific time while they live on Nigerian time, and reminders went to an address they couldn't see in the app (their school email, which wasn't receiving). They chose a user-set time zone over changing the laptop clock, so travel works too.
 - Gave the floating nav a soft pressed-in active state (spec Look and Feel, slice 7) — at the slice 7 check the learner couldn't tell which screen was active (only the icon colour changed) and chose a soft neumorphic pressed-in look over a moving black circle.
+- Added slices 8–11 for a live, judge-friendly demo: private pre-filled spaces per visitor (no sign-in), a Demo inbox with optional capped real email, hosting, and a first-visit tour (PRD Live Demo for Judges, spec Live Demo Mode) — after the proof of concept was finished, the learner decided to share a live link with judges, and hosting the single-user app as-is would have let every visitor see and change the same data and send email through the learner's Gmail. Speech-to-add was considered and moved to "What's next": browser support is uneven and parsing speech into fields would need extra services, too risky for the night's deadline.
