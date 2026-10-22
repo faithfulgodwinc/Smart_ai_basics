@@ -4,7 +4,7 @@
 import * as api from "../api.js";
 import { ApiError } from "../api.js";
 import {
-  allTimeZones, cleanMoney, detectedTimeZone, escapeHtml, todayIso, reminderAtText, reminderDestination, setTimeZone, timeZoneLabel,
+  allTimeZones, cleanMoney, escapeHtml, timeZoneOptions, todayIso, reminderAtText, reminderDestination, setTimeZone, timeZoneLabel,
 } from "../format.js";
 import { toast } from "../toast.js";
 import { dateField, setPickerValue, timeField, wirePickers } from "../pickers.js";
@@ -69,7 +69,7 @@ export function renderSubscriptionForm(root, state, subId = null) {
       ${field("source_value", "Cancel or plans link", `<input id="source_value" name="source_value" class="field-input" placeholder="https://" autocomplete="off">`)}
 
       ${needsEmail ? emailField("Where should reminders go?") : ""}
-      ${needsTimeZone ? timeZoneField("Your time zone", detectedTimeZone()) : ""}
+      ${needsTimeZone ? timeZoneField("Your time zone", "") : ""}
 
       <p class="field-error" data-error-for="form"></p>
       <button type="submit" class="btn-primary">${editing ? "Save changes" : "Save"}</button>
@@ -226,7 +226,7 @@ export function checkSettings(settings) {
     errors.email = "That email doesn't look right. Try name@example.com.";
   }
   if ("time_zone" in settings && !allTimeZones().includes(settings.time_zone)) {
-    errors.time_zone = "Choose a time zone from the list, like Africa/Lagos.";
+    errors.time_zone = settings.time_zone ? "Choose a time zone from the list." : "Please select your time zone.";
   }
   return errors;
 }
@@ -354,7 +354,7 @@ export function openReminderSettings(state, onSaved = () => {}) {
     <form novalidate class="mt-6 space-y-5">
       ${emailField(state.demo ? "Also email me (optional)" : "Send reminders to", state.email || "")}
       ${state.demo ? `<p class="-mt-3 text-sm text-graphite">Reminders always land in your Demo inbox. Add an email to get real ones too, up to 5 a day.</p>` : ""}
-      ${timeZoneField("Time zone", state.time_zone || detectedTimeZone())}
+      ${timeZoneField("Time zone", state.time_zone || "")}
       <p class="field-error" data-error-for="form"></p>
       <button type="submit" class="btn-primary">Save</button>
       <button type="button" data-close class="w-full py-3 text-graphite">Cancel</button>
@@ -388,11 +388,10 @@ function emailField(label, value = "") {
 }
 
 // A text box with suggestions: type "Lagos" or "London" and pick from the list.
+// A dropdown, so nobody can type a time zone that doesn't exist.
 function timeZoneField(label, value) {
-  const options = allTimeZones().map((zone) => `<option value="${zone}"></option>`).join("");
   return field("time_zone", label, `
-    <input id="time_zone" name="time_zone" list="time-zone-list" class="field-input" value="${escapeHtml(value)}" autocomplete="off" spellcheck="false">
-    <datalist id="time-zone-list">${options}</datalist>`);
+    <select id="time_zone" name="time_zone" class="field-input" required>${timeZoneOptions(value)}</select>`);
 }
 
 // Opens the bottom sheet with the given content. Returns the sheet and a close function.

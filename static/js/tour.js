@@ -8,7 +8,7 @@
 
 import * as api from "./api.js";
 import {
-  allTimeZones, detectedTimeZone, escapeHtml, nowInTimeZone, reminderAtText,
+  allTimeZones, escapeHtml, nowInTimeZone, reminderAtText, timeZoneOptions,
 } from "./format.js";
 import { applySettings, setFormDraft } from "./screens/forms.js";
 
@@ -191,7 +191,6 @@ export function startTour(state) {
   };
 
   const renderWelcome = (step) => {
-    const zones = allTimeZones().map((zone) => `<option value="${zone}"></option>`).join("");
     card.innerHTML = `
       <p class="text-xs tracking-[0.08em] uppercase text-graphite">Before we start</p>
       <h2 class="mt-1 text-xl font-semibold tracking-tight">${step.title}</h2>
@@ -199,8 +198,7 @@ export function startTour(state) {
       <form novalidate class="mt-4 space-y-4">
         <div>
           <label for="tour-time-zone" class="field-label">Your time zone</label>
-          <input id="tour-time-zone" list="tour-zones" class="field-input" value="${escapeHtml(state.time_zone || detectedTimeZone())}" autocomplete="off" spellcheck="false">
-          <datalist id="tour-zones">${zones}</datalist>
+          <select id="tour-time-zone" class="field-input" required>${timeZoneOptions("")}</select>
           <p class="field-error" data-error-for="tour-time-zone"></p>
         </div>
         <div>
@@ -228,12 +226,12 @@ export function startTour(state) {
     card.querySelector("[data-skip]").addEventListener("click", finish);
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const timeZone = card.querySelector("#tour-time-zone").value.trim();
+      const timeZone = card.querySelector("#tour-time-zone").value;
       const wantsEmail = card.querySelector("#tour-also-email").checked;
       const email = emailInput.value.trim();
       for (const slot of card.querySelectorAll("[data-error-for]")) slot.textContent = "";
       if (!allTimeZones().includes(timeZone)) {
-        card.querySelector('[data-error-for="tour-time-zone"]').textContent = "Choose a time zone from the list, like Africa/Lagos.";
+        card.querySelector('[data-error-for="tour-time-zone"]').textContent = "Please select your time zone.";
         return place();
       }
       if (wantsEmail && !EMAIL_PATTERN.test(email)) {

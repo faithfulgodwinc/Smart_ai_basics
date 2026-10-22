@@ -129,3 +129,24 @@ export function reminderDestination(state) {
 export function nowInTimeZone(timeZone, now = new Date()) {
   return timeZone ? new Date(now.toLocaleString("en-US", { timeZone })) : now;
 }
+
+// A time zone dropdown, grouped by region, each shown like "Lagos (GMT+1)". Nothing to type,
+// so nothing can be mistyped. With no `selected`, it starts on "Please select your time zone".
+// The device's own zone is offered first, under "Suggested", but never chosen for the person.
+export function timeZoneOptions(selected = "", suggested = detectedTimeZone()) {
+  const option = (zone) => {
+    const city = zone.split("/").slice(1).join(" / ").replace(/_/g, " ") || zone;
+    const offset = timeZoneLabel(zone).match(/\((.*)\)/)?.[1];
+    return `<option value="${zone}" ${zone === selected ? "selected" : ""}>${escapeHtml(city)}${offset ? ` (${offset})` : ""}</option>`;
+  };
+  const regions = new Map();
+  for (const zone of allTimeZones()) {
+    const region = zone.includes("/") ? zone.split("/")[0] : "Other";
+    if (!regions.has(region)) regions.set(region, []);
+    regions.get(region).push(zone);
+  }
+  return `
+    <option value="" disabled ${selected ? "" : "selected"}>Please select your time zone</option>
+    ${suggested && suggested !== selected ? `<optgroup label="Suggested">${option(suggested).replace(" selected", "")}</optgroup>` : ""}
+    ${[...regions].map(([region, zones]) => `<optgroup label="${escapeHtml(region)}">${zones.map(option).join("")}</optgroup>`).join("")}`;
+}
