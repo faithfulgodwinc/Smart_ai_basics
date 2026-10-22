@@ -109,7 +109,7 @@ Build mode: learn
   Learner check: Open the live link on your phone and in a private window on your laptop, try the core journey, and watch a reminder arrive in the Demo inbox.
   Commit: `Deploy Smart for the live demo`
 
-- [ ] **11. A short guided tour on first visit**
+- [x] **11. A short guided tour on first visit**
   Becomes usable: After the landing page, a soft spotlight walks a first-time visitor through the card, the totals, Needs attention, the + button and Profile, with Next and Skip; it shows once and can be replayed from Profile.
   Why now: Last, because it's the most optional: if the night runs long, Smart ships without it and still works.
   PRD ref: `prd.md > Live Demo for Judges`, `prd.md > Look and Feel`

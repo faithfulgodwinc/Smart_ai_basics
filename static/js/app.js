@@ -12,6 +12,7 @@ import { renderProfile } from "./screens/profile.js";
 import { renderHistory } from "./screens/history.js";
 import { lastSeenInboxId, renderInbox } from "./screens/inbox.js";
 import { toast } from "./toast.js";
+import { startTour, tourDone } from "./tour.js";
 
 export const state = {
   demo: false, // true on the live demo: each visitor has their own private, pre-filled Smart
@@ -51,6 +52,8 @@ function show() {
     link.classList.toggle("is-active", link.getAttribute("href") === `#${NAV_SECTION[target] || target}`);
   }
   window.scrollTo(0, 0);
+  // First visit (or a replay from Profile): show the guided tour once Home has something to show.
+  if (target === "home" && !tourDone() && state.cards.length) setTimeout(startTour, 400);
 }
 
 async function start() {

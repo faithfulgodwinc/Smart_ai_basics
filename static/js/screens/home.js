@@ -42,7 +42,7 @@ export function renderHome(root, state) {
 
     <section id="card-subscriptions" class="mt-8"></section>
 
-    <section class="mt-12 pt-6 border-t border-line">
+    <section data-tour="total" class="mt-12 pt-6 border-t border-line">
       <p class="text-sm text-graphite">Every month, across all cards</p>
       <p class="mt-1 text-5xl font-light tracking-tight tabular-nums">${formatMoney(overallTotal(state.subscriptions))}</p>
     </section>`;

@@ -2,6 +2,7 @@
 
 import { escapeHtml, formatMoney, isActive, overallTotal, reminderDestination, timeZoneLabel } from "../format.js";
 import { openReminderSettings } from "./forms.js";
+import { replayTour } from "../tour.js";
 
 export function renderProfile(root, state) {
   const active = state.subscriptions.filter(isActive);
@@ -36,7 +37,13 @@ export function renderProfile(root, state) {
     <a href="#history" class="row-link ${state.demo ? "" : "mt-6"} flex items-center justify-between py-4 border-t border-b border-line">
       <span>Cancelled history</span>
       <span class="text-graphite">${cancelledCount} &rarr;</span>
-    </a>`;
+    </a>
+    <button type="button" data-replay-tour class="mt-6 text-sm text-graphite underline underline-offset-2">Replay the tour</button>`;
+
+  root.querySelector("[data-replay-tour]").addEventListener("click", () => {
+    replayTour();
+    location.hash = "#home";
+  });
 
   root.querySelector("[data-settings]").addEventListener("click", () => {
     openReminderSettings(state, () => renderProfile(root, state));
