@@ -1,0 +1,26 @@
+# How Render runs Smart's live demo. Render reads this file when you create a Blueprint
+# from the repository. Secret values (sync: false) are typed into Render, never stored here.
+services:
+  - type: web
+    name: smart
+    runtime: python
+    plan: starter                 # always on, so the reminder watcher keeps running
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app -c gunicorn.conf.py
+    disk:
+      name: smart-data
+      mountPath: /var/data        # survives restarts and redeploys
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DEMO_MODE
+        value: "1"
+      - key: SMART_DB
+        value: /var/data/smart.db
+      - key: GMAIL_ADDRESS
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: APP_URL
+        sync: false

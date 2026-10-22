@@ -24,6 +24,11 @@ DEMO_MODE = os.getenv("DEMO_MODE") == "1"
 SPACE_COOKIE = "smart_space"
 
 app = Flask(__name__)
+if DEMO_MODE:
+    # On Render, a proxy in front of Smart handles https. Trust what it says about the original
+    # request, so Smart knows the visitor is on https and marks their cookie secure.
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 
 # --- Which space is this request for? ------------------------------------------

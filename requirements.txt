@@ -1,3 +1,4 @@
 flask>=3.0,<4
 python-dotenv>=1.0,<2
 tzdata>=2024.1
+gunicorn>=22,<24

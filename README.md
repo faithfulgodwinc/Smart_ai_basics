@@ -82,6 +82,24 @@ static/js/          Screens, formatting and totals, talking to the server
 static/css/         The card look, the floating nav, sheets, motion
 ```
 
+## Live demo mode
+
+With `DEMO_MODE=1`, Smart is safe to share on a public link:
+
+- **No sign-in.** Each visitor's browser gets its own private Smart (remembered by a cookie), already filled with sample cards, trials and one cancelled item. Nobody sees anyone else's.
+- **Demo inbox.** Reminders land inside Smart, shown exactly as the email looks, at the time you chose. Adding a real email is optional, and real emails are capped (5 a day per visitor, 60 a day overall) to protect the sender's Gmail.
+- **Guided tour** on the first visit, replayable from Profile.
+
+Try it locally (PowerShell), with a separate database so your own data isn't mixed in:
+
+```
+$env:DEMO_MODE="1"; $env:SMART_DB="demo.db"; $env:PORT="5050"; python app.py
+```
+
+### Deploying to Render
+
+`render.yaml` describes the service: an always-on Starter web service (the reminder watcher needs to keep running), a 1 GB persistent disk for the database, `gunicorn` as the web server (`gunicorn.conf.py`: one worker, so the watcher runs exactly once), and demo mode switched on. In Render, choose **New → Blueprint**, pick this repository, and fill in the secret values when asked: `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`, and `APP_URL` (the service's own `https://…onrender.com` address). Real emails need a paid instance: Render's free instances block outgoing email.
+
 ## How it was planned
 
 Smart was planned before it was built. The planning documents live in [`devpost/`](devpost/):
