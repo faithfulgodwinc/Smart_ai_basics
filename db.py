@@ -33,7 +33,7 @@ def current_space():
 
 @contextmanager
 def in_space(space_id):
-    """Temporarily work in another space (used by the reminder watcher and the demo seeder)."""
+    """Temporarily work in another space (used by the reminder watcher)."""
     token = _space.set(space_id)
     try:
         yield
