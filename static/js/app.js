@@ -47,7 +47,22 @@ function show() {
     section.hidden = section.id !== target;
     if (section.hidden) section.innerHTML = ""; // so field ids never appear twice on the page
   }
-  screens[target](document.getElementById(target), state, id);
+  const root = document.getElementById(target);
+  const unavailable = (error) => {
+    // Never leave a blank screen: say what happened. Usually the server is older than this page.
+    const box = root || document.getElementById("home");
+    box.hidden = false;
+    box.innerHTML = `<div class="pt-24"><a href="#home" class="text-sm text-graphite">&larr; Home</a>
+      <p class="mt-6 text-graphite leading-relaxed">${error?.message && !error.message.includes("null")
+        ? error.message
+        : "This part of Smart isn't available on the running server yet. Restart it (Ctrl+C, then python app.py) and refresh."}</p></div>`;
+  };
+  try {
+    if (!root) throw new Error();
+    Promise.resolve(screens[target](root, state, id)).catch(unavailable);
+  } catch (error) {
+    unavailable(error);
+  }
   for (const link of document.querySelectorAll(".nav-item")) {
     link.classList.toggle("is-active", link.getAttribute("href") === `#${NAV_SECTION[target] || target}`);
   }
