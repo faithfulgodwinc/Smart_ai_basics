@@ -84,6 +84,8 @@ static/css/         The card look, the floating nav, sheets, motion
 
 ## Live demo mode
 
+**Try it:** https://smart-pf9k.onrender.com (no sign-in; the tour has you add a trial and watch its reminder arrive).
+
 With `DEMO_MODE=1`, Smart is safe to share on a public link:
 
 - **No sign-in.** Each visitor's browser gets its own private Smart (remembered by a cookie), already filled with sample cards, trials and one cancelled item. Nobody sees anyone else's.

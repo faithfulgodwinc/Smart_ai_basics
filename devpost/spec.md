@@ -86,6 +86,7 @@ PRD ref: `prd.md > The Core Journey`.
 - **Start:** `python app.py`, then open `http://localhost:5000`.
 - **Demo recording:** add two cards and a few subscriptions → swipe between cards and point out the totals → add "Netflix," trial, **expires today**, **remind me at two minutes from now** → Smart says "Reminder set for …" → wait → show the reminder email arriving in Gmail (opened on the same laptop) → back in Smart, tap "Yes, cancelled" → the totals drop → show Cancelled history.
 - **Public repository:** https://github.com/faithfulgodwinc/Smart_ai_basics
+- **Live demo:** https://smart-pf9k.onrender.com (Render Starter, demo mode, persistent disk)
 - **Submission:** a short demo video plus a public GitHub repository, both required. Deployment is **not planned**. Running locally and recording it is enough. If you later want a live link, that's a `6-ship` decision. The server would need a host that keeps it running (so the once-a-minute check works), plus the same `.env` values set there.
 
 ## Look and Feel
