@@ -1,4 +1,4 @@
-# Smart — Be way ahead.
+# Smart - Be way ahead.
 
 Smart is a calm, black-and-white app for keeping track of your free trials and subscriptions. It groups each one under the card it charges, so you can see what's sitting on the account you're trying to protect. Before you're billed, it emails you a reminder with the exact place to cancel.
 
