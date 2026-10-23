@@ -7,6 +7,7 @@ import {
   allTimeZones, cleanMoney, escapeHtml, timeNow, timeZoneOptions, todayIso, reminderAtText, reminderDestination, setTimeZone, timeZoneLabel,
 } from "../format.js";
 import { toast } from "../toast.js";
+import { whileBusy } from "../busy.js";
 import { dateField, setPickerValue, timeField, wirePickers } from "../pickers.js";
 
 const NEW_CARD = "__new";
@@ -195,8 +196,7 @@ export function renderSubscriptionForm(root, state, subId = null) {
     if (showErrors(root, errors)) return;
 
     const button = form.querySelector('[type="submit"]');
-    button.disabled = true;
-    try {
+    await whileBusy(button, async () => { try {
       if (Object.keys(settings).length) {
         applySettings(state, await api.saveSettings(settings));
       }
@@ -215,8 +215,7 @@ export function renderSubscriptionForm(root, state, subId = null) {
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
       showErrors(root, { [error.field || "form"]: error.message });
-      button.disabled = false;
-    }
+    } });
   });
 }
 
@@ -304,13 +303,13 @@ export function openCardSheet({ card: existing = null, onSaved, onClosed = () =>
     if (!card.name_on_card) errors.name_on_card = "Add the name on the card.";
     if (showErrors(sheet, errors)) return;
 
-    try {
+    await whileBusy(form.querySelector('[type="submit"]'), async () => { try {
       onSaved(await (existing ? api.updateCard(existing.id, card) : api.saveCard(card)));
       close();
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
       showErrors(sheet, { [error.field || "form"]: error.message });
-    }
+    } });
   });
 }
 
@@ -336,7 +335,7 @@ export function openRenewSheet(sub, state, onRenewed) {
     clearErrors(sheet);
     const dateError = !deadline ? "Pick a date." : deadline < todayIso() ? "Pick today or a later date." : null;
     if (showErrors(sheet, dateError ? { deadline: dateError } : {})) return;
-    try {
+    await whileBusy(form.querySelector('[type="submit"]'), async () => { try {
       const result = await api.renewSubscription(sub.id, deadline);
       close();
       onRenewed(result.subscription);
@@ -344,7 +343,7 @@ export function openRenewSheet(sub, state, onRenewed) {
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
       showErrors(sheet, { [error.field || "form"]: error.message });
-    }
+    } });
   });
 }
 
@@ -396,7 +395,7 @@ export function openReminderSettings(state, onSaved = () => {}) {
     if (state.hosted && !settings.email) delete settings.email; // optional on the public site
     clearErrors(sheet);
     if (showErrors(sheet, checkSettings(settings))) return;
-    try {
+    await whileBusy(form.querySelector('[type="submit"]'), async () => { try {
       applySettings(state, await api.saveSettings(settings));
       close();
       onSaved();
@@ -404,7 +403,7 @@ export function openReminderSettings(state, onSaved = () => {}) {
     } catch (error) {
       if (!(error instanceof ApiError)) throw error;
       showErrors(sheet, { [error.field || "form"]: error.message });
-    }
+    } });
   });
 }
 

@@ -341,3 +341,21 @@
 .tour-pill button { color: var(--paper); opacity: 0.75; text-decoration: underline; text-underline-offset: 2px; }
 .tour-blocker.is-open { pointer-events: none; }
 .tour-card.is-moving { opacity: 0.55; pointer-events: none; transition: opacity 150ms var(--ease); }
+
+/* --- Busy: a calm spinning ring while a button waits on the server ---------------- */
+button.is-busy { position: relative; color: transparent !important; }
+button.is-busy > * { visibility: hidden; }
+button.is-busy::after {
+  content: ""; position: absolute; inset: 0; margin: auto; width: 18px; height: 18px; border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.3); border-top-color: var(--paper);
+  animation: spin 800ms linear infinite;
+}
+/* On light buttons (outlined, segmented, text links), the ring is ink-coloured. */
+.btn-small:not(.btn-small--ink).is-busy::after, .segmented button.is-busy::after, button.underline.is-busy::after {
+  border-color: rgba(10, 10, 10, 0.15); border-top-color: var(--ink);
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  /* No spinning for people who asked for less motion: a gentle steady ring instead. */
+  button.is-busy::after { animation: none !important; border-top-color: rgba(10, 10, 10, 0.5); }
+}

@@ -2,6 +2,7 @@
 // that's the guided demo, with a clear option to skip it and use Smart for real (Live).
 
 import { switchTo } from "../modes.js";
+import { whileBusy } from "../busy.js";
 
 export const SEEN_LANDING_KEY = "smart_seen_landing";
 
@@ -41,14 +42,16 @@ export function renderLanding(root, state) {
     }
   };
 
-  root.querySelector("[data-live]")?.addEventListener("click", async () => {
+  root.querySelector("[data-live]")?.addEventListener("click", async (event) => {
     markSeen();
-    await switchTo("live");
+    await whileBusy(event.currentTarget, () => switchTo("live"), { untilLeave: true });
   });
 
   root.querySelector("[data-start]").addEventListener("click", async () => {
     markSeen();
-    if (state.hosted && state.mode !== "demo") return switchTo("demo");
+    if (state.hosted && state.mode !== "demo") {
+      return whileBusy(root.querySelector("[data-start]"), () => switchTo("demo"), { untilLeave: true });
+    }
     if (location.hash === "#home") {
       // The address is already #home, so changing it fires nothing. Ask for a redraw directly.
       window.dispatchEvent(new HashChangeEvent("hashchange"));

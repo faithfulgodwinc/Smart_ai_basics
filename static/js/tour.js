@@ -14,6 +14,7 @@ import {
 import { setPickerValue } from "./pickers.js";
 import { applySettings, setCardDraft, setFormDraft } from "./screens/forms.js";
 import { switchTo } from "./modes.js";
+import { whileBusy } from "./busy.js";
 
 // One "seen it" note per mode, so switching to Live still gets its own tour.
 const tourKey = (state) => `smart_tour_done_${state?.mode || "local"}`;
@@ -404,9 +405,9 @@ export function startTour(state) {
       place();
     });
     card.querySelector("[data-skip]").addEventListener("click", finish);
-    card.querySelector("[data-go-live]")?.addEventListener("click", async () => {
-      finish(); // the demo's tour is done with; Live starts its own
-      await switchTo("live");
+    card.querySelector("[data-go-live]")?.addEventListener("click", async (event) => {
+      // The page reloads into Live, which starts its own tour.
+      await whileBusy(event.currentTarget, () => switchTo("live"), { untilLeave: true });
     });
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -430,7 +431,9 @@ export function startTour(state) {
         return flag("tour-email", "That email doesn't look right. Try name@example.com.");
       }
       try {
-        applySettings(state, await api.saveSettings({ time_zone: timeZone, ...(wantsEmail ? { email } : {}) }));
+        await whileBusy(form.querySelector('[type="submit"]'), async () => {
+          applySettings(state, await api.saveSettings({ time_zone: timeZone, ...(wantsEmail ? { email } : {}) }));
+        });
       } catch (error) {
         card.querySelector('[data-error-for="tour-email"]').textContent = error.message;
         return place();

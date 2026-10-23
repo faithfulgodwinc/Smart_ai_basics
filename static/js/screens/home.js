@@ -8,6 +8,7 @@ import {
 } from "../format.js";
 import { openRenewSheet } from "./forms.js";
 import { toast } from "../toast.js";
+import { whileBusy } from "../busy.js";
 import { lastSeenInboxId } from "./inbox.js";
 
 let cardObserver = null;
@@ -177,14 +178,12 @@ function wireNeedsAttention(root, state) {
 
     const cancelButton = item.querySelector('[data-action="cancel"]');
     cancelButton.addEventListener("click", async () => {
-      cancelButton.disabled = true;
-      try {
+      await whileBusy(cancelButton, async () => { try {
         replace(await api.cancelSubscription(sub.id));
         toast(`${sub.name} cancelled. You're way ahead.`);
       } catch (error) {
-        cancelButton.disabled = false;
         toast(error.message);
-      }
+      } });
     });
 
     item.querySelector('[data-action="renew"]').addEventListener("click", () => {

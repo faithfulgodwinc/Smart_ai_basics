@@ -5,6 +5,7 @@ import { openReminderSettings } from "./forms.js";
 import { replayTour } from "../tour.js";
 import { toast } from "../toast.js";
 import { switchTo } from "../modes.js";
+import { whileBusy } from "../busy.js";
 
 export function renderProfile(root, state) {
   const active = state.subscriptions.filter(isActive);
@@ -58,18 +59,18 @@ export function renderProfile(root, state) {
       const mode = button.dataset.mode;
       if (mode === state.mode) return;
       try {
-        await switchTo(mode);
+        await whileBusy(button, () => switchTo(mode), { untilLeave: true });
       } catch (error) {
         toast(error.message);
       }
     });
   }
 
-  root.querySelector("[data-replay-tour]").addEventListener("click", async () => {
+  root.querySelector("[data-replay-tour]").addEventListener("click", async (event) => {
     if (state.demo) {
       // Start the demo over: a fresh, empty Smart and the tour from the beginning.
       try {
-        await switchTo("demo");
+        await whileBusy(event.currentTarget, () => switchTo("demo"), { untilLeave: true });
       } catch (error) {
         toast(error.message);
       }

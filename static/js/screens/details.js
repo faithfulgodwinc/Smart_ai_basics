@@ -6,6 +6,7 @@ import {
 } from "../format.js";
 import { openCardSheet, openRenewSheet } from "./forms.js";
 import { toast } from "../toast.js";
+import { whileBusy } from "../busy.js";
 
 export function renderDetails(root, state, subId) {
   const sub = state.subscriptions.find((s) => s.id === Number(subId));
@@ -72,14 +73,12 @@ export function renderDetails(root, state, subId) {
 
   const cancelButton = root.querySelector('[data-action="cancel"]');
   cancelButton.addEventListener("click", async () => {
-    cancelButton.disabled = true;
-    try {
+    await whileBusy(cancelButton, async () => { try {
       replace(await api.cancelSubscription(sub.id));
       toast(`${sub.name} cancelled. You're way ahead.`);
     } catch (error) {
-      cancelButton.disabled = false;
       toast(error.message);
-    }
+    } });
   });
 
   root.querySelector('[data-action="renew"]').addEventListener("click", () => {
