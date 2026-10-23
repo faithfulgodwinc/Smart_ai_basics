@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS cards (
     nickname     TEXT NOT NULL,
     bank         TEXT NOT NULL,
     name_on_card TEXT NOT NULL,
+    color        TEXT,                     -- the card's finish: 'ink', 'forest', 'navy', 'plum', 'clay', 'graphite'
     created_at   TEXT NOT NULL
 );
 
@@ -51,4 +52,12 @@ CREATE TABLE IF NOT EXISTS inbox (
     html_body       TEXT NOT NULL,
     emailed         INTEGER NOT NULL DEFAULT 0, -- 1 = also sent as a real email
     created_at      TEXT NOT NULL
+);
+
+-- Each subscription's website icon (e.g. Netflix's red N), fetched once per site and shared by every space:
+-- it's the site's public logo, nothing about the person.
+CREATE TABLE IF NOT EXISTS icons (
+    domain     TEXT PRIMARY KEY,                -- 'netflix.com'
+    data_uri   TEXT NOT NULL,                   -- the icon as a data: URI, or '' when the site has none we can use
+    fetched_at TEXT NOT NULL
 );

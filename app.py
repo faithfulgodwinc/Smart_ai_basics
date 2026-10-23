@@ -11,6 +11,8 @@ spaces, remembered by cookies, and a switch between them:
 import os
 import re
 import secrets
+import time
+from collections import defaultdict, deque
 from datetime import date
 from zoneinfo import available_timezones
 
@@ -18,6 +20,7 @@ from dotenv import load_dotenv
 from flask import Flask, g, jsonify, render_template, request
 
 import db
+import icons
 import reminders
 
 load_dotenv()
@@ -254,9 +257,18 @@ def card_fields(body):
     )
 
 
+def valid_card_color(body):
+    """One of the card finishes, or None (a new card then gets the next unused one)."""
+    color = body.get("color") or None
+    if color is not None and color not in db.CARD_COLORS:
+        raise InvalidInput("color", "Choose one of the colours.")
+    return color
+
+
 @app.post("/api/cards")
 def post_card():
-    card = db.insert_card(*card_fields(request.get_json(silent=True) or {}))
+    body = request.get_json(silent=True) or {}
+    card = db.insert_card(*card_fields(body), color=valid_card_color(body))
     return jsonify(card), 201
 
 
@@ -264,7 +276,34 @@ def post_card():
 def put_card(card_id):
     if not db.get_card(card_id):
         raise InvalidInput("form", "That card doesn't exist anymore.")
-    return jsonify(db.update_card(card_id, *card_fields(request.get_json(silent=True) or {})))
+    body = request.get_json(silent=True) or {}
+    return jsonify(db.update_card(card_id, *card_fields(body), color=valid_card_color(body)))
+
+
+# The form asks for a site's icon while the cancel link is typed, so it's ready (and shown) by Save.
+# Each space gets a few lookups an hour, so nobody can use Smart to fetch lots of websites.
+ICON_LOOKUPS_PER_HOUR = 30
+icon_lookups = defaultdict(deque)  # space id -> times of its recent lookups
+
+
+@app.post("/api/icon")
+def post_icon():
+    link = str((request.get_json(silent=True) or {}).get("url") or "").strip()
+    sub = {"source_type": "website", "source_value": link}
+    domain = link.startswith(("http://", "https://")) and db.icon_domain(sub)
+    if not domain or "." not in domain:
+        return jsonify(icon=None)
+    cached = db.get_icon(domain)
+    if not (cached and cached["data_uri"]):
+        recent = icon_lookups[db.current_space()]
+        while recent and recent[0] < time.time() - 3600:
+            recent.popleft()
+        if len(recent) >= ICON_LOOKUPS_PER_HOUR:
+            return jsonify(icon=None)
+        recent.append(time.time())
+        icons.ensure_icon(sub)
+        cached = db.get_icon(domain)
+    return jsonify(icon=(cached or {}).get("data_uri") or None)
 
 
 @app.post("/api/subscriptions")
@@ -277,6 +316,7 @@ def post_subscription():
     not_in_the_past(fields["deadline"])
     reminder_not_in_the_past(fields["deadline"], fields["reminder_time"])
     subscription = db.insert_subscription(fields)
+    icons.ensure_icon_soon(fields)  # usually already found while the link was typed
     result = reminders.check_one(subscription["id"])  # sends it now if it's already due
     return jsonify(subscription=db.get_subscription(subscription["id"]), **result), 201
 
@@ -318,6 +358,7 @@ def put_subscription(sub_id):
     if reset:
         reminder_not_in_the_past(fields["deadline"], fields["reminder_time"])
     db.update_subscription(sub_id, fields, reset_reminders=reset)
+    icons.ensure_icon_soon(fields)
     result = reminders.check_one(sub_id)
     return jsonify(subscription=db.get_subscription(sub_id), **result)
 

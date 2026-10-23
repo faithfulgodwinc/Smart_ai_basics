@@ -4,7 +4,7 @@
 import * as api from "../api.js";
 import {
   cardSubscriptions, cardTotal, daysLeft, escapeHtml, formatDate, formatMoney,
-  needsAttention, overallTotal, sortSubscriptions, timeLeftText,
+  needsAttention, overallTotal, serviceIconHtml, sortSubscriptions, timeLeftText,
 } from "../format.js";
 import { openRenewSheet } from "./forms.js";
 import { toast } from "../toast.js";
@@ -112,7 +112,7 @@ function topBar(state, unread = false) {
 
 function cardHtml(card, index, totalCents) {
   return `
-    <article class="bank-card ${index % 2 ? "bank-card--graphite" : ""}" data-card-id="${card.id}">
+    <article class="bank-card bank-card--${card.color || (index % 2 ? "graphite" : "ink")}" data-card-id="${card.id}">
       <div class="flex items-start justify-between gap-4">
         <div class="min-w-0">
           <p class="text-2xl font-semibold tracking-tight truncate">${escapeHtml(card.nickname)}</p>
@@ -144,9 +144,12 @@ function needsAttentionHtml(state) {
         ${subs.map((sub) => `
           <li class="row-in attention-item" data-sub-id="${sub.id}">
             <div class="flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <a href="#details/${sub.id}" class="font-medium truncate block">${escapeHtml(sub.name)}</a>
-                <p class="text-sm text-graphite mt-0.5">${escapeHtml(cardName(sub.card_id))} · ${formatMoney(sub.monthly_cost_cents)} a month</p>
+              <div class="flex items-center gap-3 min-w-0">
+                ${serviceIconHtml(sub)}
+                <div class="min-w-0">
+                  <a href="#details/${sub.id}" class="font-medium truncate block">${escapeHtml(sub.name)}</a>
+                  <p class="text-sm text-graphite mt-0.5">${escapeHtml(cardName(sub.card_id))} · ${formatMoney(sub.monthly_cost_cents)} a month</p>
+                </div>
               </div>
               <span class="due-pill">${dueText(daysLeft(sub.deadline))}</span>
             </div>
@@ -197,6 +200,8 @@ function rowHtml(sub) {
   return `
     <li class="row-in border-t border-line">
       <a href="#details/${sub.id}" class="row-link flex items-center justify-between py-4">
+      <div class="flex items-center gap-3 min-w-0">
+      ${serviceIconHtml(sub)}
       <div class="min-w-0">
         <p class="font-medium truncate">
           ${escapeHtml(sub.name)}
@@ -204,6 +209,7 @@ function rowHtml(sub) {
           ${needsAttention(sub) ? `<span class="trial-label trial-label--ink">Due soon</span>` : ""}
         </p>
         <p class="text-sm text-graphite mt-0.5">${timeLeftText(days)} · ${days < 0 ? "Was due" : sub.is_trial ? "Ends" : "Renews"} ${formatDate(sub.deadline)}</p>
+      </div>
       </div>
       <p class="tabular-nums pl-4">${formatMoney(sub.monthly_cost_cents)}</p>
       </a>

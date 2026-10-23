@@ -13,6 +13,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlsplit
 
 HERE = Path(__file__).parent
 DB_PATH = Path(os.getenv("SMART_DB", HERE / "smart.db"))  # SMART_DB lets tests use a separate file
@@ -65,6 +66,8 @@ def init_db():
         # Older smart.db files: add the columns that came later. Existing rows join the 'local' space.
         if "reminder_time" not in columns("subscriptions"):
             conn.execute("ALTER TABLE subscriptions ADD COLUMN reminder_time TEXT NOT NULL DEFAULT '09:00'")
+        if "color" not in columns("cards"):
+            conn.execute("ALTER TABLE cards ADD COLUMN color TEXT")
         for table in ("cards", "subscriptions"):
             if "space_id" not in columns(table):
                 conn.execute(f"ALTER TABLE {table} ADD COLUMN space_id TEXT NOT NULL DEFAULT '{LOCAL}'")
@@ -150,23 +153,70 @@ def get_card(card_id):
     return dict(row) if row else None
 
 
-def insert_card(nickname, bank, name_on_card):
+# A card's finish. New cards take the first one not used yet, so two cards never look alike by default.
+CARD_COLORS = ("ink", "forest", "navy", "plum", "clay", "graphite")
+
+
+def next_card_color():
+    cards = list_cards()
+    # Cards from before colours existed show as ink and graphite in turn, so they count as those.
+    used = {card["color"] or ("graphite" if i % 2 else "ink") for i, card in enumerate(cards)}
+    return next((color for color in CARD_COLORS if color not in used), CARD_COLORS[len(cards) % len(CARD_COLORS)])
+
+
+def insert_card(nickname, bank, name_on_card, color=None):
+    color = color or next_card_color()
     with connect() as conn:
         cursor = conn.execute(
-            "INSERT INTO cards (space_id, nickname, bank, name_on_card, created_at) VALUES (?, ?, ?, ?, ?)",
-            (current_space(), nickname, bank, name_on_card, now()),
+            "INSERT INTO cards (space_id, nickname, bank, name_on_card, color, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (current_space(), nickname, bank, name_on_card, color, now()),
         )
         card_id = cursor.lastrowid
     return get_card(card_id)
 
 
-def update_card(card_id, nickname, bank, name_on_card):
+def update_card(card_id, nickname, bank, name_on_card, color=None):
     with connect() as conn:
         conn.execute(
-            "UPDATE cards SET nickname = ?, bank = ?, name_on_card = ? WHERE id = ? AND space_id = ?",
-            (nickname, bank, name_on_card, card_id, current_space()),
+            "UPDATE cards SET nickname = ?, bank = ?, name_on_card = ?, color = COALESCE(?, color) "
+            "WHERE id = ? AND space_id = ?",
+            (nickname, bank, name_on_card, color, card_id, current_space()),
         )
     return get_card(card_id)
+
+
+# --- Service icons --------------------------------------------------------
+# icons.py fetches them; these keep them, one per site.
+
+def icon_domain(sub):
+    """'https://www.netflix.com/cancelplan' -> 'netflix.com'. None for app subscriptions."""
+    if sub["source_type"] != "website":
+        return None
+    host = (urlsplit(sub["source_value"]).hostname or "").lower()
+    return host.removeprefix("www.") or None
+
+
+def get_icon(domain):
+    with connect() as conn:
+        row = conn.execute("SELECT * FROM icons WHERE domain = ?", (domain,)).fetchone()
+    return dict(row) if row else None
+
+
+def save_icon(domain, data_uri):
+    with connect() as conn:
+        conn.execute(
+            "INSERT INTO icons (domain, data_uri, fetched_at) VALUES (?, ?, ?) "
+            "ON CONFLICT(domain) DO UPDATE SET data_uri = excluded.data_uri, fetched_at = excluded.fetched_at",
+            (domain, data_uri, now()),
+        )
+
+
+def with_icon(conn, sub):
+    """Adds sub["icon"]: the site's icon as a data: URI, or None (the app shows a monogram instead)."""
+    domain = icon_domain(sub)
+    row = domain and conn.execute("SELECT data_uri FROM icons WHERE domain = ?", (domain,)).fetchone()
+    sub["icon"] = (row["data_uri"] or None) if row else None
+    return sub
 
 
 # --- Subscriptions --------------------------------------------------------
@@ -175,14 +225,14 @@ def list_subscriptions():
     with connect() as conn:
         rows = conn.execute("SELECT * FROM subscriptions WHERE space_id = ? ORDER BY id",
                             (current_space(),)).fetchall()
-    return [dict(row) for row in rows]
+        return [with_icon(conn, dict(row)) for row in rows]
 
 
 def get_subscription(sub_id):
     with connect() as conn:
         row = conn.execute("SELECT * FROM subscriptions WHERE id = ? AND space_id = ?",
                            (sub_id, current_space())).fetchone()
-    return dict(row) if row else None
+        return with_icon(conn, dict(row)) if row else None
 
 
 def list_active_subscriptions():

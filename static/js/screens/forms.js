@@ -4,7 +4,7 @@
 import * as api from "../api.js";
 import { ApiError } from "../api.js";
 import {
-  allTimeZones, cleanMoney, escapeHtml, timeNow, timeZoneOptions, todayIso, reminderAtText, reminderDestination, setTimeZone, timeZoneLabel,
+  CARD_COLORS, allTimeZones, cleanMoney, escapeHtml, nextCardColor, timeNow, timeZoneOptions, todayIso, reminderAtText, reminderDestination, setTimeZone, timeZoneLabel,
 } from "../format.js";
 import { toast } from "../toast.js";
 import { whileBusy } from "../busy.js";
@@ -74,13 +74,16 @@ export function renderSubscriptionForm(root, state, subId = null) {
         </div>
         <p class="field-error" data-error-for="source_type"></p>
       </div>
-      ${field("source_value", "Cancel or plans link", `<input id="source_value" name="source_value" class="field-input" placeholder="https://" autocomplete="off">`)}
+      ${field("source_value", "Cancel or plans link", `<div class="relative">
+        <input id="source_value" name="source_value" class="field-input site-input" placeholder="https://" autocomplete="off">
+        <img data-site-icon alt="" class="site-icon-preview" hidden>
+      </div>`)}
 
       ${needsEmail ? emailField("Where should reminders go?") : ""}
       ${needsTimeZone ? timeZoneField("Your time zone", "") : ""}
 
       <p class="field-error" data-error-for="form"></p>
-      <button type="submit" class="btn-primary">${editing ? "Save changes" : "Save"}</button>
+      <button type="submit" class="btn-primary btn-primary--accent">${editing ? "Save changes" : "Save"}</button>
     </form>`;
 
   const form = root.querySelector("form");
@@ -121,7 +124,42 @@ export function renderSubscriptionForm(root, state, subId = null) {
     inputs.source_value.placeholder = isWebsite ? "https://" : "Duolingo";
     if (!keepValue) inputs.source_value.value = "";
     clearError(root, "source_value");
+    showSiteIcon();
   };
+
+  // While the cancel link is typed, Smart looks up the site's icon and shows it in the field,
+  // so Netflix's red N is already there by the time you save.
+  const siteIcon = root.querySelector("[data-site-icon]");
+  let iconTimer = null;
+  let iconFor = "";
+  function showSiteIcon() {
+    clearTimeout(iconTimer);
+    const link = inputs.source_value.value.trim();
+    const looksLikeLink = sourceType === "website" && /^https?:\/\/[^/\s]+\.[^/\s]{2,}/.test(link);
+    if (!looksLikeLink) {
+      siteIcon.hidden = true;
+      iconFor = "";
+      return;
+    }
+    const host = new URL(link).hostname.replace(/^www\./, "");
+    if (host === iconFor) return;
+    iconTimer = setTimeout(async () => {
+      iconFor = host;
+      try {
+        const { icon } = await api.lookupIcon(link);
+        if (iconFor !== host) return; // the link changed while we were looking
+        siteIcon.hidden = !icon;
+        if (icon) {
+          siteIcon.src = icon;
+          siteIcon.classList.remove("is-in");
+          requestAnimationFrame(() => siteIcon.classList.add("is-in"));
+        }
+      } catch {
+        siteIcon.hidden = true; // no icon is fine: the list shows a monogram
+      }
+    }, 450);
+  }
+  inputs.source_value.addEventListener("input", showSiteIcon);
   for (const button of root.querySelectorAll("[data-source]")) {
     button.addEventListener("click", () => chooseSource(button.dataset.source));
   }
@@ -135,6 +173,7 @@ export function renderSubscriptionForm(root, state, subId = null) {
     inputs.source_value.value = editing.source_value;
     chooseSource(editing.source_type, true);
     showTrialLabel();
+    showSiteIcon();
   } else if (pendingDraft) {
     const draft = pendingDraft;
     pendingDraft = null;
@@ -155,6 +194,7 @@ export function renderSubscriptionForm(root, state, subId = null) {
       return;
     }
     openCardSheet({
+      cards: state.cards,
       onSaved(card) {
         state.cards.push(card);
         inputs.card_id.innerHTML = cardOptions(state);
@@ -266,7 +306,8 @@ export function reminderNote({ reminder, reminder_at: reminderAt }, state) {
 // --- Card sheet ------------------------------------------------------------
 
 // card given -> edit it; otherwise create a new one.
-export function openCardSheet({ card: existing = null, onSaved, onClosed = () => {} }) {
+export function openCardSheet({ card: existing = null, cards = [], onSaved, onClosed = () => {} }) {
+  const chosen = existing?.color || nextCardColor(cards);
   const { sheet, close } = openSheet(`
     <div class="mx-auto mb-6 h-1 w-10 rounded-full bg-line"></div>
     <h2 class="text-2xl font-semibold tracking-tight">${existing ? "Edit card" : "New card"}</h2>
@@ -275,6 +316,16 @@ export function openCardSheet({ card: existing = null, onSaved, onClosed = () =>
       ${field("nickname", "Nickname", `<input id="nickname" name="nickname" class="field-input" placeholder="Side card" autocomplete="off">`)}
       ${field("bank", "Bank", `<input id="bank" name="bank" class="field-input" placeholder="Your bank" autocomplete="off">`)}
       ${field("name_on_card", "Name on card", `<input id="name_on_card" name="name_on_card" class="field-input" autocomplete="off">`)}
+      <fieldset>
+        <legend class="field-label">Colour</legend>
+        <div class="swatches">
+          ${CARD_COLORS.map((color) => `
+            <label class="swatch swatch--${color}" title="${color[0].toUpperCase() + color.slice(1)}">
+              <input type="radio" name="color" value="${color}" ${color === chosen ? "checked" : ""} aria-label="${color}">
+              <span aria-hidden="true"></span>
+            </label>`).join("")}
+        </div>
+      </fieldset>
       <p class="field-error" data-error-for="form"></p>
       <button type="submit" class="btn-primary">Save card</button>
       <button type="button" data-close class="w-full py-3 text-graphite">Cancel</button>
@@ -295,6 +346,7 @@ export function openCardSheet({ card: existing = null, onSaved, onClosed = () =>
       nickname: inputs.nickname.value.trim(),
       bank: inputs.bank.value.trim(),
       name_on_card: inputs.name_on_card.value.trim(),
+      color: inputs.color.value,
     };
     clearErrors(sheet);
     const errors = {};

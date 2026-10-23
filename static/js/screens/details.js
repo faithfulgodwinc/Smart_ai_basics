@@ -88,6 +88,7 @@ export function renderDetails(root, state, subId) {
   root.querySelector("[data-edit-card]").addEventListener("click", () => {
     openCardSheet({
       card,
+      cards: state.cards,
       onSaved(updated) {
         state.cards = state.cards.map((c) => (c.id === updated.id ? updated : c));
         renderDetails(root, state, subId);

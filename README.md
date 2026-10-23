@@ -24,7 +24,7 @@ Most trackers list dates. **Smart tracks which card is exposed.**
 - **A reminder you can act on.** Two days before, then one day before, at the time you chose, in your time zone, by email and in the app. Every reminder shows where to cancel: a direct link, or which app to open.
 - **It asks, instead of assuming.** Once a deadline passes, Smart asks *"Did you cancel, or did it renew?"* Cancel it and the totals drop. Say it renewed, give the next date, and the reminders carry on.
 - **No card numbers, no bank logins, ever.** A card is a nickname, a bank and the name on it. Nothing worth stealing.
-- **Calm by design.** Black and white, soft, quiet. The only colour in the whole app is red, used only when a field needs fixing.
+- **Calm by design.** Soft and quiet. Colour is kept for what helps: each card has its own finish, each subscription shows its service's own icon (found automatically from the cancel link), one deep green marks + and Save, and red only ever means a field needs fixing.
 
 ## What a judge can do in three minutes
 

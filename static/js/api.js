@@ -44,3 +44,4 @@ export const updateSubscription = (id, sub) => request("PUT", `/api/subscription
 export const updateCard = (id, card) => request("PUT", `/api/cards/${id}`, card);
 export const getInbox = () => request("GET", "/api/inbox");
 export const switchMode = (mode) => request("POST", "/api/mode", { mode });
+export const lookupIcon = (url) => request("POST", "/api/icon", { url });

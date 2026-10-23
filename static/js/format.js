@@ -172,3 +172,24 @@ export function timeNow(timeZone = chosenTimeZone) {
   const city = timeZone ? ` (${timeZone.split("/").pop().replace(/_/g, " ")} time)` : "";
   return { hhmm, words: `${clockLabel(hhmm)}${city}` };
 }
+
+// --- Card finishes and service icons ------------------------------------------
+
+// The same finishes as db.CARD_COLORS. A new card takes the first one not used yet.
+export const CARD_COLORS = ["ink", "forest", "navy", "plum", "clay", "graphite"];
+
+export function nextCardColor(cards) {
+  // Cards from before colours existed show as ink and graphite in turn, so they count as those.
+  const used = new Set(cards.map((card, i) => card.color || (i % 2 ? "graphite" : "ink")));
+  return CARD_COLORS.find((color) => !used.has(color)) || CARD_COLORS[cards.length % CARD_COLORS.length];
+}
+
+// A subscription's icon: its website's own (found by the server), or a soft monogram in a calm tint.
+const MONOGRAM_TINTS = [["#E4EEE9", "#1F5F4A"], ["#E6EAF3", "#2B3F66"], ["#F0E7EE", "#5A2F52"], ["#F3EAE2", "#7A4A36"], ["#ECECEA", "#3A3A3A"]];
+
+export function serviceIconHtml(sub) {
+  if (sub.icon) return `<img src="${escapeHtml(sub.icon)}" alt="" class="service-icon" aria-hidden="true">`;
+  const name = sub.name.trim() || "?";
+  const [background, color] = MONOGRAM_TINTS[[...name].reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % MONOGRAM_TINTS.length];
+  return `<span class="service-icon service-icon--monogram" style="background:${background};color:${color}" aria-hidden="true">${escapeHtml([...name][0].toUpperCase())}</span>`;
+}
