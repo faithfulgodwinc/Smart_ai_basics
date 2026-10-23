@@ -9,7 +9,7 @@
 
 import * as api from "./api.js";
 import {
-  allTimeZones, escapeHtml, nowInTimeZone, reminderAtText, timeZoneOptions,
+  allTimeZones, escapeHtml, nowInTimeZone, reminderAtText, timeNow, timeZoneOptions,
 } from "./format.js";
 import { setPickerValue } from "./pickers.js";
 import { applySettings, setCardDraft, setFormDraft } from "./screens/forms.js";
@@ -60,6 +60,17 @@ const sheetOpen = () => !document.getElementById("sheet").hidden;
 const sheetClosed = () => document.getElementById("sheet").hidden;
 const onScreen = (hash) => () => location.hash === hash;
 
+// Types into a field one letter at a time, as if someone were typing it.
+async function typeInto(input, text) {
+  input.focus();
+  input.value = "";
+  for (const letter of text) {
+    input.value += letter;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 45));
+  }
+}
+
 // The four taps that add one trial and the card it charges.
 function addTrialSteps({ intro, subscription, card, saveText, beforeSave }) {
   return [
@@ -82,14 +93,6 @@ function demoSteps(state) {
 
   // Netflix ends today; its reminder is two minutes after the visitor taps Save.
   const twoMinutesFromNow = () => new Date(zoneNow().getTime() + (zoneNow().getSeconds() > 40 ? 3 : 2) * 60000);
-  const netflix = () => {
-    const at = twoMinutesFromNow();
-    return {
-      name: "Netflix", monthly_cost: "15.49", is_trial: true, deadline: isoDate(at),
-      reminder_time: `${pad(at.getHours())}:${pad(at.getMinutes())}`,
-      source_type: "website", source_value: "https://www.netflix.com/cancelplan",
-    };
-  };
   const setNetflixReminder = () => {
     // Re-time it now, so "two minutes" holds however long they spent reading.
     const at = twoMinutesFromNow();
@@ -106,19 +109,53 @@ function demoSteps(state) {
     };
   };
 
+  // Netflix, field by field: each step explains one part, and "Type it in" fills it while they watch.
+  const side = { nickname: "Side card", bank: "Online Bank", name_on_card: "ALEX DEMO" };
+  const zone = () => (state.time_zone ? `${state.time_zone.split("/").pop().replace(/_/g, " ")} time` : "your time");
+  const alsoEmail = () => (state.email ? ` and to ${state.email}` : "");
+  const netflixSteps = [
+    { target: ".nav-add", title: "Your Smart is empty",
+      text: "Let's build it together. You just started a Netflix free trial: tap + to add it.",
+      act: tap, done: onScreen("#add"), before: () => { setFormDraft(null); setCardDraft(side); } },
+    { target: "#add #name", title: "First, its name", fillLabel: "Type it in",
+      text: "We've picked Netflix for you. Tap the button and watch it go in.",
+      fill: (el) => typeInto(el, "Netflix") },
+    { target: "#add #monthly_cost", title: "What it costs", fillLabel: "Type it in",
+      text: "15.49 a month: what Netflix charges once the free trial ends. Smart adds it to the card's monthly total, so you can see what that card is carrying.",
+      fill: (el) => typeInto(el, "15.49") },
+    { target: '#add [data-tour="trial"]', title: "It's a free trial", fillLabel: "Switch it on",
+      text: "Switch this on for trials you mean to cancel. Smart labels them and lists them first, because they're the ones that catch people out.",
+      fill: () => {
+        const toggle = document.querySelector("#add #is_trial");
+        toggle.checked = true;
+        toggle.dispatchEvent(new Event("change", { bubbles: true }));
+      } },
+    { target: '#add [data-tour="when"]', title: "When it ends, and when to remind you", fillLabel: "Set the time",
+      text: () => `It's ${timeNow(state.time_zone).words} now. The trial ends today, so we'll set your reminder for two minutes from now. That's when it will reach you: in your Demo inbox${alsoEmail()}.`,
+      fill: () => setNetflixReminder() },
+    { target: "#add #reminder-settings-line", title: "How reminders work",
+      text: () => `Smart reminds you 2 days before, then 1 day before, at the time you picked, in ${zone()}. Netflix ends today, so you'll get one "renews today" reminder at ${reminder.time}, in your Demo inbox${alsoEmail()}.` },
+    { target: "#add #source_value", title: "Where you'd cancel", fillLabel: "Add the link",
+      text: "You signed up on Netflix's website, so we'll add its cancel page. Your reminder will link straight to it. (For something you got in an app, you'd type the app's name instead.)",
+      fill: (el) => typeInto(el, "https://www.netflix.com/cancelplan") },
+    { target: "#add #card_id", title: "Which card does it charge?",
+      text: "This is what Smart is really about: knowing which card is exposed. Tap here to add your Side card.",
+      act: chooseNewCard, done: sheetOpen },
+    { target: '#sheet [type="submit"]', title: "Your Side card",
+      text: "Side card, Online Bank. No card number, ever. Just enough to recognise it. Tap Save card.",
+      act: tap, done: sheetClosed },
+    { target: '#add [type="submit"]', title: "All yours. Save it", before: setNetflixReminder,
+      text: () => `Netflix, a free trial ending today, on your Side card. Its reminder is set for ${reminder.time}, two minutes from now. Tap Save.`,
+      act: tap, done: onScreen("#home") },
+  ];
+
   return [
     { title: "Welcome to Smart", welcome: true },
-    ...addTrialSteps({
-      intro: { title: "Your Smart is empty", text: "Let's build it. You just started a Netflix free trial: tap + to add it." },
-      subscription: netflix,
-      card: { nickname: "Side card", bank: "Online Bank", name_on_card: "ALEX DEMO" },
-      beforeSave: setNetflixReminder,
-      saveText: () => `Netflix, a free trial that ends today, on your Side card. Its reminder is set for ${reminder.time}, two minutes away. Tap Save.`,
-    }),
+    ...netflixSteps,
     { target: '[aria-label="Your cards"]', title: "Your first card",
       text: "Made from what you just saved, with Netflix on it and its monthly total. Nothing here was pre-built." },
     ...addTrialSteps({
-      intro: { title: "Now the card you protect", text: "You also tried Duolingo Max, and it went on your main account. Tap + to add it." },
+      intro: { title: "Now the card you protect", text: "You also tried Duolingo Max, and it went on your main account. You know how it works now, so we've filled this one in. Tap + to add it." },
       subscription: duolingo,
       card: { nickname: "Main card", bank: "Savings Bank", name_on_card: "ALEX DEMO" },
       saveText: () => "Duolingo Max, a free trial ending in 9 days, on your Main card. Tap Save.",
@@ -234,17 +271,18 @@ export function startTour(state) {
   blocker.addEventListener("click", (event) => {
     const step = steps[index];
     if (!step?.act || !target || watching) return;
-    const box = target.getBoundingClientRect();
-    const inside = event.clientX >= box.left && event.clientX <= box.right
+    // Count it if it lands on the control or on its highlight (the two can differ for a moment
+    // while something is still sliding into place).
+    const within = (box) => event.clientX >= box.left && event.clientX <= box.right
       && event.clientY >= box.top && event.clientY <= box.bottom;
-    if (!inside) return;
+    if (!within(target.getBoundingClientRect()) && !within(spotlight.getBoundingClientRect())) return;
     step.act(target);
     // Move on once the screen has really changed (the form opened, the card saved...).
     watching = setInterval(() => {
       if (step.done()) {
         clearInterval(watching);
         watching = null;
-        setTimeout(next, 350); // let the new screen settle
+        setTimeout(next, 150); // a moment for the new screen to draw
       }
     }, 120);
   });
@@ -273,9 +311,19 @@ export function startTour(state) {
       <p class="mt-1 text-[15px] leading-relaxed text-graphite">${escapeHtml(text)}</p>
       <div class="mt-4 flex items-center justify-between">
         <button type="button" data-skip class="text-sm text-graphite">${last ? "" : "Skip tour"}</button>
-        ${step.act ? "" : `<button type="button" data-next class="btn-small btn-small--ink px-5">${last ? "Done" : "Next"}</button>`}
+        ${step.act ? "" : `<button type="button" data-next class="btn-small btn-small--ink px-5">${step.fill ? step.fillLabel : last ? "Done" : "Next"}</button>`}
       </div>`;
-    card.querySelector("[data-next]")?.addEventListener("click", next);
+    const nextButton = card.querySelector("[data-next]");
+    let filled = !step.fill;
+    nextButton?.addEventListener("click", async () => {
+      if (filled) return next();
+      nextButton.disabled = true;
+      await step.fill(target); // e.g. types "Netflix" into the name field while they watch
+      filled = true;
+      nextButton.disabled = false;
+      nextButton.textContent = "Next";
+      nextButton.focus();
+    });
     card.querySelector("[data-skip]").addEventListener("click", finish);
     if (!target.closest(".floating-nav")) target.scrollIntoView({ block: "center" });
     requestAnimationFrame(() => {
@@ -417,6 +465,7 @@ export function startTour(state) {
     markDone(state);
     running = false;
     clearInterval(watching);
+    clearInterval(follow);
     blocker.remove();
     spotlight.remove();
     card.remove();
@@ -428,6 +477,8 @@ export function startTour(state) {
   window.addEventListener("resize", place);
   window.addEventListener("scroll", place, true);
   document.addEventListener("keydown", onKey);
+  // Keep the highlight on its control as things slide, scroll or redraw.
+  const follow = setInterval(() => { if (target && !moving) place(); }, 150);
   next();
 }
 

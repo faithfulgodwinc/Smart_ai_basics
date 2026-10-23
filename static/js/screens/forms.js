@@ -48,12 +48,12 @@ export function renderSubscriptionForm(root, state, subId = null) {
       ${field("name", "Name", `<input id="name" name="name" class="field-input" placeholder="Netflix" autocomplete="off">`)}
       ${field("monthly_cost", "Monthly cost", `<input id="monthly_cost" name="monthly_cost" class="field-input" inputmode="decimal" placeholder="15.49">`)}
 
-      <div class="flex items-center justify-between gap-4 py-1">
+      <div data-tour="trial" class="flex items-center justify-between gap-4 py-1">
         <label for="is_trial" class="leading-snug">Free trial I intend to cancel?</label>
         <span class="switch"><input type="checkbox" id="is_trial" name="is_trial"><span></span></span>
       </div>
 
-      <div class="grid grid-cols-[1fr_auto] gap-3">
+      <div data-tour="when" class="grid grid-cols-[1fr_auto] gap-3">
         ${field("deadline", "Next billing date", dateField("deadline"))}
         ${field("reminder_time", "Remind me at", timeField("reminder_time"))}
       </div>
