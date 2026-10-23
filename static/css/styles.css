@@ -7,7 +7,7 @@
   --graphite: #6B6B6B;
   --ink: #0A0A0A;
   --error: #D92D20; /* red only ever means: something needs fixing */
-  --accent: #1F5F4A; /* deep green, kept to the two buttons that move you forward: + and Save */
+  --accent: #1F5F4A; /* deep green. The rule: green = do it, or chosen; red = fix this; black = what you read */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -90,7 +90,7 @@
 .card-dots { display: flex; justify-content: center; gap: 8px; margin-top: -30px; }
 .card-dots button { width: 6px; height: 6px; border-radius: 999px; background: var(--line); padding: 0; transition: all 250ms var(--ease); position: relative; }
 .card-dots button::after { content: ""; position: absolute; inset: -12px -6px; } /* bigger tap area */
-.card-dots button[aria-selected="true"] { width: 18px; background: var(--ink); }
+.card-dots button[aria-selected="true"] { width: 18px; background: var(--accent); }
 
 .trial-label {
   display: inline-block;
@@ -164,7 +164,7 @@
   transition: border-color 200ms var(--ease), background 200ms var(--ease);
   appearance: none;
 }
-.field-input:focus { border-color: var(--ink); background: var(--paper); }
+.field-input:focus { border-color: var(--accent); background: var(--paper); }
 .field-input.has-error { border-color: var(--error); box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.12); }
 .field-error { font-size: 13px; color: var(--error); margin-top: 6px; }
 .field-error:empty { display: none; }
@@ -173,18 +173,18 @@
 /* Segmented choice (Website / App) */
 .segmented { display: grid; grid-template-columns: 1fr 1fr; background: var(--mist); border-radius: 14px; padding: 4px; }
 .segmented button { padding: 10px; border-radius: 10px; font-size: 15px; color: var(--graphite); transition: all 200ms var(--ease); }
-.segmented button[aria-pressed="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 3px rgba(10, 10, 10, 0.12); }
+.segmented button[aria-pressed="true"] { background: var(--paper); color: var(--accent); font-weight: 600; box-shadow: 0 1px 3px rgba(10, 10, 10, 0.12); }
 
 /* On/off switch */
 .switch { position: relative; width: 50px; height: 30px; flex: none; }
 .switch input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--line); transition: background 200ms var(--ease); pointer-events: none; }
 .switch span::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 999px; background: var(--paper); box-shadow: 0 1px 3px rgba(10, 10, 10, 0.25); transition: transform 200ms var(--ease); }
-.switch input:checked + span { background: var(--ink); }
+.switch input:checked + span { background: var(--accent); }
 .switch input:checked + span::after { transform: translateX(20px); }
-.switch input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
+.switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-.btn-primary { width: 100%; background: var(--ink); color: var(--paper); border-radius: 999px; padding: 16px; font-size: 16px; font-weight: 500; transition: opacity 200ms var(--ease); }
+.btn-primary { width: 100%; background: var(--accent); color: var(--paper); border-radius: 999px; padding: 16px; font-size: 16px; font-weight: 500; transition: opacity 200ms var(--ease); }
 .btn-primary:disabled { opacity: 0.5; }
 .btn-primary--accent { background: var(--accent); }
 
@@ -243,7 +243,7 @@
 .due-pill { flex: none; background: var(--ink); color: var(--paper); border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 500; }
 .trial-label--ink { background: var(--ink); color: var(--paper); }
 .btn-small { border: 1px solid var(--ink); border-radius: 999px; padding: 10px 12px; font-size: 14px; font-weight: 500; background: var(--paper); transition: opacity 200ms var(--ease); }
-.btn-small--ink { background: var(--ink); color: var(--paper); }
+.btn-small--ink { background: var(--accent); border-color: var(--accent); color: var(--paper); } /* the filled small button: the action */
 .btn-small:disabled { opacity: 0.5; }
 
 /* --- Rows and details ------------------------------------------------------ */
@@ -285,10 +285,11 @@
 .calendar-day:disabled { opacity: 0.28; cursor: default; }
 .calendar-day.is-today { box-shadow: inset 0 0 0 1px var(--ink); }
 .calendar-day.is-selected {
-  font-weight: 600;
-  box-shadow: inset 3px 3px 7px rgba(10, 10, 10, 0.16), inset -3px -3px 7px rgba(255, 255, 255, 0.95);
+  font-weight: 600; background: var(--accent); color: var(--paper);
+  box-shadow: inset 2px 2px 5px rgba(0, 0, 0, 0.25);
 }
-.calendar-day:focus-visible, .wheel:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.calendar-day.is-selected:hover { background: var(--accent); }
+.calendar-day:focus-visible, .wheel:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .wheels { position: relative; display: flex; justify-content: center; gap: 8px; height: 220px; } /* 5 rows of 44px */
 .wheel-band {
@@ -310,7 +311,7 @@
 .wheel-item.is-centre { color: var(--ink); font-weight: 600; transform: scale(1.06); }
 
 /* --- Demo inbox ---------------------------------------------------------------- */
-.inbox-dot { position: absolute; top: 7px; right: 7px; width: 8px; height: 8px; border-radius: 999px; background: var(--ink); box-shadow: 0 0 0 2px var(--mist); }
+.inbox-dot { position: absolute; top: 7px; right: 7px; width: 8px; height: 8px; border-radius: 999px; background: var(--accent); box-shadow: 0 0 0 2px var(--mist); }
 .inbox-frame { width: 100%; height: 72dvh; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
 .toast.is-shown { pointer-events: auto; }
 .toast-link { color: var(--paper); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; margin-left: 4px; }
@@ -330,7 +331,7 @@
 }
 .tour-blocker.is-dim { background: rgba(10, 10, 10, 0.42); animation: fade 200ms var(--ease); }
 .tour-card .field-input { background: var(--paper); border-color: var(--line); }
-.tour-card .field-input:focus { border-color: var(--ink); }
+.tour-card .field-input:focus { border-color: var(--accent); }
 .tour-card .field-input.has-error { border-color: var(--error); }
 
 /* --- Demo / Live -------------------------------------------------------------- */
@@ -372,7 +373,7 @@ button.is-busy::after {
 .swatch { position: relative; width: 40px; height: 40px; cursor: pointer; }
 .swatch input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; }
 .swatch span { position: absolute; inset: 4px; border-radius: 999px; transition: box-shadow 200ms var(--ease), transform 200ms var(--ease); pointer-events: none; }
-.swatch input:checked + span { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--ink); }
+.swatch input:checked + span { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--accent); }
 .swatch input:focus-visible + span { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--graphite); }
 .swatch--ink span { background: linear-gradient(135deg, #1C1C1C, #0A0A0A); }
 .swatch--forest span { background: linear-gradient(135deg, #2A6352, #163D32); }

@@ -176,7 +176,7 @@ export function timeNow(timeZone = chosenTimeZone) {
 // --- Card finishes and service icons ------------------------------------------
 
 // The same finishes as db.CARD_COLORS. A new card takes the first one not used yet.
-export const CARD_COLORS = ["ink", "forest", "navy", "plum", "clay", "graphite"];
+export const CARD_COLORS = ["forest", "ink", "navy", "plum", "clay", "graphite"]; // forest first: the brand colour
 
 export function nextCardColor(cards) {
   // Cards from before colours existed show as ink and graphite in turn, so they count as those.

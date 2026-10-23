@@ -154,7 +154,7 @@ def get_card(card_id):
 
 
 # A card's finish. New cards take the first one not used yet, so two cards never look alike by default.
-CARD_COLORS = ("ink", "forest", "navy", "plum", "clay", "graphite")
+CARD_COLORS = ("forest", "ink", "navy", "plum", "clay", "graphite")  # forest first: the brand colour
 
 
 def next_card_color():
