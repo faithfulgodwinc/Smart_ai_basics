@@ -2,7 +2,7 @@
 
 import { escapeHtml, formatMoney, inboxName, isActive, overallTotal, reminderDestination, timeZoneLabel } from "../format.js";
 import { openReminderSettings } from "./forms.js";
-import { replayTour } from "../tour.js";
+import { replayTour, startTour } from "../tour.js";
 import { toast } from "../toast.js";
 import { switchTo } from "../modes.js";
 import { whileBusy } from "../busy.js";
@@ -78,6 +78,7 @@ export function renderProfile(root, state) {
     }
     replayTour(state);
     location.hash = "#home";
+    setTimeout(() => startTour(state), 400); // asked for, so it plays even on a Smart that has cards
   });
 
   root.querySelector("[data-settings]").addEventListener("click", () => {

@@ -69,9 +69,12 @@ function show() {
     link.classList.toggle("is-active", link.getAttribute("href") === `#${NAV_SECTION[target] || target}`);
   }
   window.scrollTo(0, 0);
-  // First visit (or a replay from Profile): show the guided tour once Home has something to show.
-  // (On the demo it starts on an empty Home: the tour has the visitor build their Smart.)
-  if (target === "home" && !tourDone(state) && (state.cards.length || state.hosted)) setTimeout(() => startTour(state), 400);
+  // First visit (or a replay from Profile): show the guided tour.
+  // On the public site it starts only on an empty Smart (the tour has the visitor build it), so a
+  // second window onto a demo they've already filled in never starts it over; Profile replays it.
+  // Running Smart yourself, it waits until Home has something to show.
+  const tourFits = state.hosted ? !state.cards.length : state.cards.length > 0;
+  if (target === "home" && !tourDone(state) && tourFits) setTimeout(() => startTour(state), 400);
 }
 
 async function start() {
