@@ -1,10 +1,10 @@
 // Profile: a soft summary, where reminders go, and the way into Cancelled history.
 
-import * as api from "../api.js";
 import { escapeHtml, formatMoney, inboxName, isActive, overallTotal, reminderDestination, timeZoneLabel } from "../format.js";
 import { openReminderSettings } from "./forms.js";
 import { replayTour } from "../tour.js";
 import { toast } from "../toast.js";
+import { switchTo } from "../modes.js";
 
 export function renderProfile(root, state) {
   const active = state.subscriptions.filter(isActive);
@@ -51,25 +51,30 @@ export function renderProfile(root, state) {
       <span>Cancelled history</span>
       <span class="text-graphite">${cancelledCount} &rarr;</span>
     </a>
-    <button type="button" data-replay-tour class="mt-6 text-sm text-graphite underline underline-offset-2">Replay the tour</button>`;
+    <button type="button" data-replay-tour class="mt-6 text-sm text-graphite underline underline-offset-2">${state.demo ? "Restart the demo" : "Replay the tour"}</button>`;
 
   for (const button of root.querySelectorAll("[data-mode]")) {
     button.addEventListener("click", async () => {
       const mode = button.dataset.mode;
       if (mode === state.mode) return;
       try {
-        await api.switchMode(mode);
+        await switchTo(mode);
       } catch (error) {
         toast(error.message);
-        return;
       }
-      if (mode === "demo") replayTour({ mode: "demo" }); // a fresh demo always gets the tour again
-      location.hash = "#home";
-      location.reload();
     });
   }
 
-  root.querySelector("[data-replay-tour]").addEventListener("click", () => {
+  root.querySelector("[data-replay-tour]").addEventListener("click", async () => {
+    if (state.demo) {
+      // Start the demo over: a fresh, empty Smart and the tour from the beginning.
+      try {
+        await switchTo("demo");
+      } catch (error) {
+        toast(error.message);
+      }
+      return;
+    }
     replayTour(state);
     location.hash = "#home";
   });

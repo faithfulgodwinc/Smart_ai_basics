@@ -1,4 +1,7 @@
-// The first thing someone sees: what Smart stands for, and one way in.
+// The first thing someone sees: what Smart stands for, and the way in. On the public site
+// that's the guided demo, with a clear option to skip it and use Smart for real (Live).
+
+import { switchTo } from "../modes.js";
 
 export const SEEN_LANDING_KEY = "smart_seen_landing";
 
@@ -10,7 +13,7 @@ export function hasSeenLanding() {
   }
 }
 
-export function renderLanding(root) {
+export function renderLanding(root, state) {
   root.innerHTML = `
     <div class="landing">
       <p class="text-sm tracking-[0.08em] uppercase text-graphite">Smart</p>
@@ -24,15 +27,28 @@ export function renderLanding(root) {
         <li class="flex gap-3"><span class="landing-dot"></span>No card numbers. No bank logins.</li>
         <li class="flex gap-3"><span class="landing-dot"></span>A reminder at the time you choose.</li>
       </ul>
-      <button type="button" class="btn-primary mt-14">Get started</button>
+      <button type="button" data-start class="btn-primary mt-14">${state.hosted ? "Try the guided demo" : "Get started"}</button>
+      ${state.hosted ? `
+        <p class="mt-3 text-sm text-graphite text-center">The demo is practice and resets each time.</p>
+        <button type="button" data-live class="mt-4 w-full py-3 text-[15px] underline underline-offset-4">Skip the demo, use Smart for real</button>` : ""}
     </div>`;
 
-  root.querySelector("button").addEventListener("click", () => {
+  const markSeen = () => {
     try {
       localStorage.setItem(SEEN_LANDING_KEY, "1");
     } catch {
       // storage blocked: they'll see the landing page again next time, which is harmless
     }
+  };
+
+  root.querySelector("[data-live]")?.addEventListener("click", async () => {
+    markSeen();
+    await switchTo("live");
+  });
+
+  root.querySelector("[data-start]").addEventListener("click", async () => {
+    markSeen();
+    if (state.hosted && state.mode !== "demo") return switchTo("demo");
     if (location.hash === "#home") {
       // The address is already #home, so changing it fires nothing. Ask for a redraw directly.
       window.dispatchEvent(new HashChangeEvent("hashchange"));

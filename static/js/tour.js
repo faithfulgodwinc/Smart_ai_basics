@@ -13,6 +13,7 @@ import {
 } from "./format.js";
 import { setPickerValue } from "./pickers.js";
 import { applySettings, setCardDraft, setFormDraft } from "./screens/forms.js";
+import { switchTo } from "./modes.js";
 
 // One "seen it" note per mode, so switching to Live still gets its own tour.
 const tourKey = (state) => `smart_tour_done_${state?.mode || "local"}`;
@@ -140,12 +141,13 @@ function liveSteps(state) {
   return [
     { title: "Welcome to your Smart", welcome: true,
       intro: "This is Live: your own Smart, kept in this browser. You'll add a trial you've really started, and the card it charges. First, two quick things." },
-    { target: ".nav-add", title: "Add your first trial", text: "Tap + to add a free trial or subscription you've actually started.",
+    { target: ".nav-add", title: () => (state.cards.length ? "Add a trial" : "Add your first trial"),
+      text: "Tap + to add a free trial or subscription you've actually started.",
       act: tap, done: onScreen("#add"), before: () => { before = state.subscriptions.length; } },
     { free: true, title: "Fill it in yourself",
       text: "Its name, the monthly cost, and the date it ends or renews. For Card, choose \u201cNew card\u2026\u201d to add the card it charges. Pick when you'd like to be reminded, then tap Save.",
       done: () => location.hash === "#home" && state.subscriptions.length > before },
-    { target: '[aria-label="Your cards"]', title: "Your first card",
+    { target: '[aria-label="Your cards"]', title: () => (state.cards.length > 1 ? "Your cards" : "Your first card"),
       text: "Made from what you just entered. Every trial sits under the card it charges, so you can see what each card is carrying." },
     { target: '[aria-label="Needs attention"]', title: "Needs attention",
       text: "When something is due, Smart asks: have you cancelled it? Say yes and the totals drop." },
@@ -267,7 +269,7 @@ export function startTour(state) {
     const last = index === steps.length - 1;
     card.innerHTML = `
       <p class="text-xs tracking-[0.08em] uppercase text-graphite">${index + 1} of ${steps.length}</p>
-      <h2 class="mt-1 text-lg font-semibold tracking-tight">${escapeHtml(step.title)}</h2>
+      <h2 class="mt-1 text-lg font-semibold tracking-tight">${escapeHtml(typeof step.title === "function" ? step.title() : step.title)}</h2>
       <p class="mt-1 text-[15px] leading-relaxed text-graphite">${escapeHtml(text)}</p>
       <div class="mt-4 flex items-center justify-between">
         <button type="button" data-skip class="text-sm text-graphite">${last ? "" : "Skip tour"}</button>
@@ -316,9 +318,10 @@ export function startTour(state) {
 
   const renderWelcome = (step) => {
     card.innerHTML = `
-      <p class="text-xs tracking-[0.08em] uppercase text-graphite">Before we start</p>
+      <p class="text-xs tracking-[0.08em] uppercase text-graphite">${state.demo ? "Demo mode" : "Live mode"}</p>
       <h2 class="mt-1 text-xl font-semibold tracking-tight">${step.title}</h2>
-      <p class="mt-1 text-[15px] leading-relaxed text-graphite">${step.intro || "You'll build your own Smart in a few taps, then watch a reminder arrive. First, two quick things."}</p>
+      <p class="mt-1 text-[15px] leading-relaxed text-graphite">${step.intro || "This is a practice Smart: it starts empty, you build it in a few taps, then watch a reminder arrive. It resets every time you come back to Demo."}</p>
+      ${state.demo ? `<button type="button" data-go-live class="mt-2 text-[15px] underline underline-offset-4">Use Smart for real instead (Live)</button>` : ""}
       <form novalidate class="mt-4 space-y-4">
         <div>
           <label for="tour-time-zone" class="field-label">Your time zone</label>
@@ -348,6 +351,10 @@ export function startTour(state) {
       place();
     });
     card.querySelector("[data-skip]").addEventListener("click", finish);
+    card.querySelector("[data-go-live]")?.addEventListener("click", async () => {
+      finish(); // the demo's tour is done with; Live starts its own
+      await switchTo("live");
+    });
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const timeZone = card.querySelector("#tour-time-zone").value;
