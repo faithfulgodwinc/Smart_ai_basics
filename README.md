@@ -1,26 +1,96 @@
 # Smart - Be way ahead.
 
-Smart is a calm, black-and-white app for keeping track of your free trials and subscriptions. It groups each one under the card it charges, so you can see what's sitting on the account you're trying to protect. Before you're billed, it emails you a reminder with the exact place to cancel.
+**Smart stops free trials from turning into charges you didn't expect.** It groups every trial and subscription under the card it charges, shows what each card is carrying a month, and reminds you before you're billed, with where to cancel.
 
-- **Group by card.** Swipe between your cards to see what each one is carrying, with a monthly total per card and an overall total.
-- **Reminders at the time you choose.** You get an email 2 days and 1 day before each deadline, at that subscription's "Remind me at" time, in your own time zone. If a reminder is already due when you save, it goes out straight away.
-- **"Have you cancelled this?"** Anything due soon or past due rises to the top. Mark it cancelled and the totals drop, or say it renewed and give the next billing date.
-- **No card numbers, no bank logins.** A card is just a nickname, a bank, and the name on the card.
+### ▶ Try it live: **https://smart-pf9k.onrender.com**
 
-Built for the Devpost *Build With AI: Basics* hackathon as a proof of concept.
+No sign-up, no password, no real email needed. Tap **Try the guided demo** and the tour has you build your own Smart in about three minutes, then watch a real reminder arrive.
+
+I'm **Faithful Godwin**, and I built Smart for the Devpost *Build With AI: Basics* hackathon, planned and built with AI from an empty folder to a live app.
+
+---
+
+## Why Smart exists
+
+You start a free trial "just to try it." You mean to cancel. You get busy. Weeks later a bank alert tells you the trial became a subscription, and it was charged to the account you were trying to protect.
+
+That happened to me: Netflix kept charging me for months before I noticed. Many people like me keep a protected main account and pay for things online from a side card, so the real question isn't only *when* will I be charged, but **which card is exposed?**
+
+## What makes it different
+
+Most trackers list dates. **Smart tracks which card is exposed.**
+
+- **Your cards, as cards.** Swipe between them. Each one shows the trials and subscriptions it's paying for and its monthly total, with an overall total underneath.
+- **A reminder you can act on.** Two days before, then one day before, at the time you chose, in your time zone, by email and in the app. Every reminder shows where to cancel: a direct link, or which app to open.
+- **It asks, instead of assuming.** Once a deadline passes, Smart asks *"Did you cancel, or did it renew?"* Cancel it and the totals drop. Say it renewed, give the next date, and the reminders carry on.
+- **No card numbers, no bank logins, ever.** A card is a nickname, a bank and the name on it. Nothing worth stealing.
+- **Calm by design.** Black and white, soft, quiet. The only colour in the whole app is red, used only when a field needs fixing.
+
+## What a judge can do in three minutes
+
+The live site has two modes, switched in **Profile**, like a trading app's demo and live accounts:
+
+| | **Demo** | **Live** |
+|---|---|---|
+| Starts | Empty, every time | Empty, then it's yours |
+| Guided tour | Builds Smart with you, field by field | A short guide to find your way around |
+| Your data | Thrown away when you restart the demo | Kept in your browser |
+
+**The Demo walkthrough:**
+
+1. Choose your time zone (and, if you like, an email address for a real reminder).
+2. Add a **Netflix free trial** one field at a time. Tap **Type it in** and watch each field fill: name, cost, trial switch, the date and a reminder time two minutes from now, and the cancel link.
+3. Add the **Side card** it charges, then save. A second trial, Duolingo Max, goes on the main card.
+4. See both cards, what each is carrying, and the total.
+5. Two minutes later the **reminder arrives** in Smart's inbox (and in your email, if you gave one), with Netflix's cancel link.
+
+Everything you see is real: real saves to a real database, a real background watcher, a real email.
+
+## Built with AI, planned before a line of code
+
+I built Smart in a few days with **Claude Code** as my pair-programming partner, following the Devpost *Build With AI: Basics* kit. The kit's six steps took my idea from a conversation to a deployed app:
+
+| Step | What it produced |
+|---|---|
+| **1 · Start** | A profile of me and my idea, so every later step fit the person building it |
+| **2 · Scope** | [`scope.md`](devpost/scope.md): an interview that found the unique kernel (*which card is exposed*) and cut everything else |
+| **3 · PRD** | [`prd.md`](devpost/prd.md): the core journey, every behaviour, every state and edge case, in plain words |
+| **4 · Spec** | [`spec.md`](devpost/spec.md): the technical blueprint, sized to a proof of concept |
+| **5 · Build** | [`checklist.md`](devpost/checklist.md): the app built in small slices, each one verified in a real browser and committed |
+| **6 · Ship** | This repository, the live site and the demo |
+
+The planning wasn't decoration. The scope's "which card is exposed" became the card-first home screen; the PRD's "Did you cancel, or did it renew?" became a real screen; the spec chose a stack small enough to understand and own. When testing changed the plan, the change was written down: the **Revisions** list in [`checklist.md`](devpost/checklist.md) records every one, and why.
+
+The AI wrote code; the decisions stayed mine. Many of the details came from me trying the app and asking for something: a reminder time to demo with, my own time zone, a refusal for times already past, red for a missing field, a tour that teaches every field, a spinner so there's never a dull moment. [`app-map.html`](devpost/app-map.html) is a one-page guide to what powers what (download it and open it in a browser).
 
 ## How it works
 
-- **The app** (`templates/index.html`, `static/`) is plain HTML, CSS and JavaScript, styled with Tailwind. It runs in your browser and is designed for a phone screen first.
-- **The server** (`app.py`) is a small Python program built with Flask. It stores everything in one SQLite file, `smart.db`, and answers the app's requests.
-- **The deadline watcher** (`reminders.py`) runs inside the server. It checks every minute whether a reminder is due.
-- **The mailer** (`mailer.py`) writes the email and hands it to Gmail over an encrypted SMTP connection, logging in with a Gmail app password.
+```
+ Phone-first web app ──► Flask server ──► SQLite database
+ (HTML, Tailwind, JS)        │
+                             ├── Deadline watcher: checks every minute, in each person's time zone
+                             └── Mailer: sends the reminder through Gmail (encrypted SMTP)
+```
 
-The server only watches deadlines while it's running. If it was off when a reminder was due, it catches up as soon as it starts again.
+- **The app** (`templates/`, `static/`) is plain HTML, CSS and JavaScript with Tailwind, no framework. Custom date and time-wheel pickers, a guided-tour engine, and an in-app inbox.
+- **The server** (`app.py`) is a small Flask app. Every request is checked: costs must be numbers, dates can't be in the past, and a reminder for today must be later than the time now.
+- **The deadline watcher** (`reminders.py`) runs inside the server and never sends the same reminder twice. If the server was off when a reminder was due, it catches up when it starts.
+- **On the live site**, each browser gets its own private Smart through a cookie. Nobody sees anyone else's, and real emails are capped (5 a day per visitor, 60 a day overall) to protect the sender.
 
-## Setup (Windows)
+```
+app.py              Flask server: pages, JSON routes, Demo/Live spaces, starts the watcher
+db.py, schema.sql   The SQLite database: spaces, settings, cards, subscriptions, inbox
+reminders.py        When is a reminder due? Checks on save and every minute
+mailer.py           Builds the reminder email and sends it through Gmail
+templates/          The app page and the email templates
+static/js/          Screens, pickers, the guided tour, talking to the server
+static/css/         The card look, the floating nav, sheets, motion
+render.yaml         The live deployment on Render
+```
 
-You need **Python 3.11 or newer**, an internet connection, and a **Gmail account with 2-Step Verification turned on**.
+## Run it yourself (Windows)
+
+You need **Python 3.11+** and, for real emails, a **Gmail account with 2-Step Verification**.
 
 ```
 python -m venv .venv
@@ -29,7 +99,7 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-Open `.env` and fill in your values:
+Fill in `.env` (it's ignored by git, so your password stays on your machine):
 
 ```
 GMAIL_ADDRESS=you@gmail.com
@@ -37,86 +107,37 @@ GMAIL_APP_PASSWORD=your 16-character app password
 APP_URL=http://localhost:5000
 ```
 
-`.env` is ignored by git, so your password never leaves your laptop.
-
-### Getting a Gmail app password
-
-1. Go to your Google Account → **Security** and turn on **2-Step Verification** if it isn't on already.
-2. Search for **App passwords** in your Google Account settings and create one (any name, e.g. "Smart").
-3. Copy the 16-character password into `GMAIL_APP_PASSWORD`. This is *not* your normal Gmail password.
-
-To check that email works before using the app:
+To get an app password: Google Account → **Security** → turn on **2-Step Verification** → search **App passwords** → create one. It is not your normal Gmail password. Check email works with `python send_test_email.py you@example.com`.
 
 ```
-python send_test_email.py you@example.com
-```
-
-## Run it
-
-```
-.venv\Scripts\activate
 python app.py
 ```
 
-Then open **http://localhost:5000**. For the phone-sized view on a laptop, open your browser's developer tools (F12) and switch on the device toolbar.
-
-When the server starts you should see `[reminders] Watching deadlines every 60 seconds.` After changing any code, stop the server (Ctrl+C) and start it again, because a running server keeps the code it started with.
-
-The first time you add a subscription, Smart asks where reminders should go and which time zone they should follow. You can change both later in **Profile**.
-
-## Try the reminder yourself
-
-1. Add a trial whose end date is **today**, and set **Remind me at** to two minutes from now.
-2. Smart says "Reminder set for … today."
-3. Wait. The terminal prints `[mailer] Sent …` and the email arrives in your inbox.
-
-## Project layout
-
-```
-app.py              Flask server: pages, JSON routes, starts the deadline watcher
-db.py, schema.sql   The SQLite database: settings, cards, subscriptions
-reminders.py        When is a reminder due? Checks on save and every minute
-mailer.py           Builds the reminder email and sends it through Gmail
-templates/          The app page and the email templates
-static/js/          Screens, formatting and totals, talking to the server
-static/css/         The card look, the floating nav, sheets, motion
-```
-
-## Live demo mode
-
-**Try it:** https://smart-pf9k.onrender.com (no sign-in; the tour has you add a trial and watch its reminder arrive).
-
-With `DEMO_MODE=1`, Smart is safe to share on a public link:
-
-- **No sign-in.** Each visitor's browser gets its own private Smart (remembered by a cookie), already filled with sample cards, trials and one cancelled item. Nobody sees anyone else's.
-- **Demo inbox.** Reminders land inside Smart, shown exactly as the email looks, at the time you chose. Adding a real email is optional, and real emails are capped (5 a day per visitor, 60 a day overall) to protect the sender's Gmail.
-- **Demo and Live.** A switch in Profile. Demo starts fresh every time and the guided tour has you build it; Live is your own Smart, kept in this browser, with a lighter tour.
-- **Guided tour** on the first visit to each, replayable from Profile.
-
-Try it locally (PowerShell), with a separate database so your own data isn't mixed in:
+Open **http://localhost:5000** (on a laptop, press F12 and switch on the device toolbar for the phone view). To try the public-site version with Demo and Live locally:
 
 ```
 $env:DEMO_MODE="1"; $env:SMART_DB="demo.db"; $env:PORT="5050"; python app.py
 ```
 
-### Deploying to Render
+### Deploying
 
-`render.yaml` describes the service: an always-on Starter web service (the reminder watcher needs to keep running), a 1 GB persistent disk for the database, `gunicorn` as the web server (`gunicorn.conf.py`: one worker, so the watcher runs exactly once), and demo mode switched on. In Render, choose **New → Blueprint**, pick this repository, and fill in the secret values when asked: `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`, and `APP_URL` (the service's own `https://…onrender.com` address). Real emails need a paid instance: Render's free instances block outgoing email.
-
-## How it was planned
-
-Smart was planned before it was built. The planning documents live in [`devpost/`](devpost/):
-
-- [`scope.md`](devpost/scope.md): the idea, the unique kernel, and what was cut
-- [`prd.md`](devpost/prd.md): the core journey and every behavior
-- [`spec.md`](devpost/spec.md): the technical blueprint
-- [`checklist.md`](devpost/checklist.md): the build, slice by slice, with every change of plan under **Revisions**
-- [`app-map.html`](devpost/app-map.html): a one-page guide to what powers what (download and open it in a browser)
-
-The `.md` files are the current versions. The `.html` files are snapshots from the planning reviews, made before the build changed a few details.
+`render.yaml` describes the live service: an always-on web service (the watcher must keep running), a persistent disk for the database, and `gunicorn` with one worker so the watcher runs exactly once. On Render choose **New → Blueprint**, pick this repository and fill in `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD` and `APP_URL`. Real emails need a paid instance, because free instances block outgoing email.
 
 ## Limits of this proof of concept
 
-- It runs on your own laptop, for one person, in one browser. There are no accounts.
-- Reminders are sent from your own Gmail account.
-- The "Open Smart" button in emails points to `APP_URL`, which is `localhost` by default and so only works on the same laptop.
+- There are no accounts: Live Smart is kept in one browser, so it doesn't follow you to another device.
+- Reminders are sent from one Gmail account, with daily caps.
+- Costs are monthly; yearly plans aren't modelled yet.
+- Smart points you to the right place to cancel. It can't cancel for you, because companies don't offer that access.
+
+## What's next
+
+- **Accounts**, so your Smart follows you from phone to laptop.
+- **Built-in cancel guides** for common services, including step-by-step help for App Store and Google Play subscriptions.
+- **Add a trial by voice**: say "Netflix, free trial, ends Friday, side card" and it's in.
+- **Bank statement upload** to find forgotten subscriptions automatically.
+- **Yearly and other billing cycles.**
+
+## Credits
+
+Designed, planned and built by me, **Faithful Godwin**, with Claude Code, for Devpost's *Build With AI: Basics*. Released under the [MIT License](LICENSE).
