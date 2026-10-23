@@ -34,7 +34,7 @@ export function renderSubscriptionForm(root, state, subId = null) {
     location.hash = "#home";
     return;
   }
-  const needsEmail = !state.email && !state.demo; // demo reminders go to the Demo inbox
+  const needsEmail = !state.email && !state.hosted; // on the public site, reminders always reach the in-app inbox
   const needsTimeZone = !state.time_zone;
   const backTo = editing ? `#details/${editing.id}` : "#home";
 
@@ -360,8 +360,8 @@ export function openReminderSettings(state, onSaved = () => {}) {
     <h2 class="text-2xl font-semibold tracking-tight">Reminder settings</h2>
     <p class="mt-2 text-sm text-graphite">One email and one time zone for all your reminders.</p>
     <form novalidate class="mt-6 space-y-5">
-      ${emailField(state.demo ? "Also email me (optional)" : "Send reminders to", state.email || "")}
-      ${state.demo ? `<p class="-mt-3 text-sm text-graphite">Reminders always land in your Demo inbox. Add an email to get real ones too, up to 5 a day.</p>` : ""}
+      ${emailField(state.hosted ? "Also email me (optional)" : "Send reminders to", state.email || "")}
+      ${state.hosted ? `<p class="-mt-3 text-sm text-graphite">Reminders always land in your ${state.demo ? "Demo inbox" : "inbox"} here. Add an email to get real ones too, up to 5 a day.</p>` : ""}
       ${timeZoneField("Time zone", state.time_zone || "")}
       <p class="field-error" data-error-for="form"></p>
       <button type="submit" class="btn-primary">Save</button>
@@ -375,7 +375,7 @@ export function openReminderSettings(state, onSaved = () => {}) {
       email: form.elements.email.value.trim(),
       time_zone: form.elements.time_zone.value.trim(),
     };
-    if (state.demo && !settings.email) delete settings.email; // optional in demo mode
+    if (state.hosted && !settings.email) delete settings.email; // optional on the public site
     clearErrors(sheet);
     if (showErrors(sheet, checkSettings(settings))) return;
     try {

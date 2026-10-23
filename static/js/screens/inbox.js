@@ -1,7 +1,7 @@
-// Demo inbox: every reminder this demo visitor would have been emailed, shown exactly as the email looks.
+// The in-app inbox ("Demo inbox" in Demo, "Inbox" in Live): every reminder, shown exactly as the email looks.
 
 import * as api from "../api.js";
-import { escapeHtml } from "../format.js";
+import { escapeHtml, inboxName } from "../format.js";
 
 export const INBOX_SEEN_KEY = "smart_inbox_seen"; // the newest reminder this browser has looked at
 
@@ -29,14 +29,14 @@ export async function renderInbox(root, state, itemId) {
 
   const item = itemId ? items.find((i) => i.id === Number(itemId)) : null;
   if (item) {
-    renderMessage(root, item);
+    renderMessage(root, item, state);
     return;
   }
 
   root.innerHTML = `
     <header class="pt-10 pb-8">
       <a href="#home" class="text-sm text-graphite">&larr; Home</a>
-      <h1 class="mt-6 text-3xl font-semibold tracking-tight">Demo inbox</h1>
+      <h1 class="mt-6 text-3xl font-semibold tracking-tight">${inboxName(state)}</h1>
       <p class="mt-2 text-graphite leading-relaxed">The reminders Smart sends you land here, exactly as the email looks.
         ${state.email ? `Copies also go to ${escapeHtml(state.email)}.` : "Add your email in Reminder settings to get real ones too."}</p>
     </header>
@@ -56,10 +56,10 @@ export async function renderInbox(root, state, itemId) {
     : `<p class="py-6 text-graphite border-t border-line">Nothing yet. Add a trial ending today with a reminder a minute or two away, and watch it arrive here.</p>`}`;
 }
 
-function renderMessage(root, item) {
+function renderMessage(root, item, state) {
   root.innerHTML = `
     <header class="pt-10 pb-6">
-      <a href="#inbox" data-replace class="text-sm text-graphite">&larr; Demo inbox</a>
+      <a href="#inbox" data-replace class="text-sm text-graphite">&larr; ${inboxName(state)}</a>
       <p class="mt-6 text-sm text-graphite">From Smart · ${receivedText(item.created_at)}</p>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight">${escapeHtml(item.subject)}</h1>
     </header>

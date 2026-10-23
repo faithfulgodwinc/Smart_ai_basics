@@ -15,7 +15,9 @@ import { toast } from "./toast.js";
 import { startTour, tourDone } from "./tour.js";
 
 export const state = {
-  demo: false, // true on the live demo: each visitor has their own private, pre-filled Smart
+  hosted: false, // the public site: in-app inbox, and a Demo | Live switch
+  mode: null, // "demo" or "live" on the public site; null on a laptop
+  demo: false, // true in Demo: a fresh Smart that the guided tour fills in
   email: null,
   time_zone: null, // e.g. 'Africa/Lagos': dates and reminders follow this
   cards: [],
@@ -69,13 +71,13 @@ function show() {
   window.scrollTo(0, 0);
   // First visit (or a replay from Profile): show the guided tour once Home has something to show.
   // (On the demo it starts on an empty Home: the tour has the visitor build their Smart.)
-  if (target === "home" && !tourDone() && (state.cards.length || state.demo)) setTimeout(() => startTour(state), 400);
+  if (target === "home" && !tourDone(state) && (state.cards.length || state.hosted)) setTimeout(() => startTour(state), 400);
 }
 
 async function start() {
   try {
     Object.assign(state, await api.getState());
-    if (state.demo && !state.time_zone) {
+    if (state.hosted && !state.time_zone) {
       // A demo visitor's reminders follow their own clock without asking.
       Object.assign(state, await api.saveSettings({ time_zone: detectedTimeZone() }));
     }
@@ -96,7 +98,7 @@ async function start() {
     location.replace(link.getAttribute("href"));
   });
   show();
-  if (state.demo) watchInbox();
+  if (state.hosted) watchInbox();
 }
 
 // Demo mode: while Smart is open, check every 20 seconds for a reminder that just arrived.

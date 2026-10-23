@@ -1,10 +1,11 @@
 // The guided tour for first-time visitors. A soft spotlight on one thing at a time, with a
 // small card explaining it. Shown once per browser; Profile can replay it.
 //
-// On the live demo, Smart starts empty and the tour has the visitor build it: set their
-// time zone and how reminders reach them, then add two ready-filled trials, creating the
-// card each one charges along the way. Netflix's reminder is two minutes after they save,
-// so they watch it arrive. On a personal laptop it's a short look around Home.
+// In Demo, Smart starts empty and the tour has the visitor build it: set their time zone and
+// how reminders reach them, then add two ready-filled trials, creating the card each one
+// charges along the way. Netflix's reminder is two minutes after they save, so they watch it
+// arrive. In Live, the tour guides them while they fill in their own trial. On a personal
+// laptop it's a short look around Home.
 
 import * as api from "./api.js";
 import {
@@ -13,29 +14,30 @@ import {
 import { setPickerValue } from "./pickers.js";
 import { applySettings, setCardDraft, setFormDraft } from "./screens/forms.js";
 
-const TOUR_DONE_KEY = "smart_tour_done";
+// One "seen it" note per mode, so switching to Live still gets its own tour.
+const tourKey = (state) => `smart_tour_done_${state?.mode || "local"}`;
 const EMAIL_PATTERN = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const NEW_CARD = "__new";
 
-export function tourDone() {
+export function tourDone(state) {
   try {
-    return localStorage.getItem(TOUR_DONE_KEY) === "1";
+    return localStorage.getItem(tourKey(state)) === "1";
   } catch {
     return true; // storage blocked: don't show it on every visit
   }
 }
 
-function markDone() {
+function markDone(state) {
   try {
-    localStorage.setItem(TOUR_DONE_KEY, "1");
+    localStorage.setItem(tourKey(state), "1");
   } catch {
     // storage blocked: harmless
   }
 }
 
-export function replayTour() {
+export function replayTour(state) {
   try {
-    localStorage.removeItem(TOUR_DONE_KEY);
+    localStorage.removeItem(tourKey(state));
   } catch {
     // storage blocked: it still plays now
   }
@@ -132,6 +134,29 @@ function demoSteps(state) {
   ];
 }
 
+// Live: their own Smart. The tour points the way; they type everything themselves.
+function liveSteps(state) {
+  let before = 0;
+  return [
+    { title: "Welcome to your Smart", welcome: true,
+      intro: "This is Live: your own Smart, kept in this browser. You'll add a trial you've really started, and the card it charges. First, two quick things." },
+    { target: ".nav-add", title: "Add your first trial", text: "Tap + to add a free trial or subscription you've actually started.",
+      act: tap, done: onScreen("#add"), before: () => { before = state.subscriptions.length; } },
+    { free: true, title: "Fill it in yourself",
+      text: "Its name, the monthly cost, and the date it ends or renews. For Card, choose \u201cNew card\u2026\u201d to add the card it charges. Pick when you'd like to be reminded, then tap Save.",
+      done: () => location.hash === "#home" && state.subscriptions.length > before },
+    { target: '[aria-label="Your cards"]', title: "Your first card",
+      text: "Made from what you just entered. Every trial sits under the card it charges, so you can see what each card is carrying." },
+    { target: '[aria-label="Needs attention"]', title: "Needs attention",
+      text: "When something is due, Smart asks: have you cancelled it? Say yes and the totals drop." },
+    { target: '[data-tour="total"]', title: "Your monthly total", text: "What your cards will cost you each month, if nothing gets cancelled." },
+    { target: 'a[href="#inbox"].profile-button', title: "Your inbox",
+      text: () => `Reminders land here at the time you chose${state.email ? `, and in ${state.email}` : ". Add your email in Profile to get them by email too"}.` },
+    { target: '.nav-item[href="#profile"]', title: "Profile",
+      text: "Where reminders go, your time zone, and what you've cancelled. You can switch to Demo here anytime for a fresh guided demo; your Live Smart stays as it is." },
+  ];
+}
+
 function lookAroundSteps() {
   return [
     { target: '[aria-label="Needs attention"]', title: "Needs attention",
@@ -151,7 +176,7 @@ let running = false;
 
 export function startTour(state) {
   if (running) return;
-  const steps = state.demo ? demoSteps(state) : lookAroundSteps();
+  const steps = state.demo ? demoSteps(state) : state.hosted ? liveSteps(state) : lookAroundSteps();
   running = true;
 
   const blocker = document.createElement("div"); // only the highlighted control responds
@@ -167,10 +192,20 @@ export function startTour(state) {
   let index = -1;
   let target = null;
   let watching = null; // the timer that waits for an act step to take effect
+  let moving = false; // between steps: ignore extra taps on Next, so no step gets skipped
 
   const place = () => {
     const width = Math.min(360, window.innerWidth - 32);
-    blocker.classList.toggle("is-dim", !target); // a centred card dims the page itself
+    const free = steps[index]?.free;
+    blocker.classList.toggle("is-dim", !target && !free); // a centred card dims the page itself
+    blocker.classList.toggle("is-open", Boolean(free)); // a "fill it in yourself" step: the page stays usable
+    if (free) {
+      spotlight.hidden = true;
+      if (card.className === "tour-card") {
+        Object.assign(card.style, { width: `${width}px`, left: `${(window.innerWidth - width) / 2}px`, top: "12px" });
+      }
+      return;
+    }
     if (!target) {
       spotlight.hidden = true;
       Object.assign(card.style, {
@@ -214,13 +249,18 @@ export function startTour(state) {
 
   const show = async () => {
     const step = steps[index];
+    if (step.free) return showFree(step);
     if (step.welcome) {
       target = null;
       renderWelcome(step);
       return;
     }
     target = await waitFor(step.target);
-    if (!target) return next(); // not on this screen: skip it
+    if (!target) { // not on this screen (e.g. nothing is due yet): skip it
+      index += 1;
+      if (index >= steps.length) return finish();
+      return show();
+    }
     await settled(target); // e.g. a sheet still sliding up: highlight it where it ends up
     step.before?.();
     const text = typeof step.text === "function" ? step.text() : step.text;
@@ -242,11 +282,43 @@ export function startTour(state) {
     });
   };
 
+  // A step where the visitor does the work: a small note at the top, the page fully usable.
+  // "Got it" folds the note into a slim pill; the tour moves on by itself once done() is true.
+  const showFree = (step) => {
+    target = null;
+    const fold = () => {
+      card.className = "tour-pill";
+      card.removeAttribute("style");
+      card.innerHTML = `<span>${escapeHtml(step.title)}: tap Save when you're done</span><button type="button" data-skip>Skip tour</button>`;
+      card.querySelector("[data-skip]").addEventListener("click", finish);
+    };
+    card.className = "tour-card";
+    card.innerHTML = `
+      <p class="text-xs tracking-[0.08em] uppercase text-graphite">${index + 1} of ${steps.length}</p>
+      <h2 class="mt-1 text-lg font-semibold tracking-tight">${escapeHtml(step.title)}</h2>
+      <p class="mt-1 text-[15px] leading-relaxed text-graphite">${escapeHtml(step.text)}</p>
+      <div class="mt-4 flex items-center justify-between">
+        <button type="button" data-skip class="text-sm text-graphite">Skip tour</button>
+        <button type="button" data-fold class="btn-small btn-small--ink px-5">Got it</button>
+      </div>`;
+    card.querySelector("[data-skip]").addEventListener("click", finish);
+    card.querySelector("[data-fold]").addEventListener("click", fold);
+    requestAnimationFrame(place);
+    watching = setInterval(() => {
+      if (step.done()) {
+        clearInterval(watching);
+        watching = null;
+        card.className = "tour-card";
+        setTimeout(next, 450);
+      }
+    }, 200);
+  };
+
   const renderWelcome = (step) => {
     card.innerHTML = `
       <p class="text-xs tracking-[0.08em] uppercase text-graphite">Before we start</p>
       <h2 class="mt-1 text-xl font-semibold tracking-tight">${step.title}</h2>
-      <p class="mt-1 text-[15px] leading-relaxed text-graphite">You'll build your own Smart in a few taps, then watch a reminder arrive. First, two quick things.</p>
+      <p class="mt-1 text-[15px] leading-relaxed text-graphite">${step.intro || "You'll build your own Smart in a few taps, then watch a reminder arrive. First, two quick things."}</p>
       <form novalidate class="mt-4 space-y-4">
         <div>
           <label for="tour-time-zone" class="field-label">Your time zone</label>
@@ -255,7 +327,7 @@ export function startTour(state) {
         </div>
         <div>
           <span class="field-label">Reminders reach you</span>
-          <p class="text-[15px]">In Smart's Demo inbox, always.</p>
+          <p class="text-[15px]">In Smart's ${state.demo ? "Demo inbox" : "inbox"}, always.</p>
           <label class="mt-3 flex items-center justify-between gap-4">
             <span class="text-[15px]">Also by email</span>
             <span class="switch"><input type="checkbox" id="tour-also-email"><span></span></span>
@@ -304,10 +376,18 @@ export function startTour(state) {
     });
   };
 
-  function next() {
+  async function next() {
+    if (moving) return;
+    moving = true;
+    card.classList.add("is-moving");
     index += 1;
-    if (index >= steps.length) return finish();
-    show();
+    if (index >= steps.length) {
+      moving = false;
+      return finish();
+    }
+    await show();
+    card.classList.remove("is-moving");
+    moving = false;
   }
 
   const onKey = (event) => {
@@ -315,7 +395,7 @@ export function startTour(state) {
   };
 
   function finish() {
-    markDone();
+    markDone(state);
     running = false;
     clearInterval(watching);
     blocker.remove();

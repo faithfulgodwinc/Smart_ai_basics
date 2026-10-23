@@ -2,8 +2,10 @@
 
 Start it with:  python app.py   then open http://localhost:5000
 
-Demo mode (DEMO_MODE=1, for the live link): every visitor gets their own private
-space, remembered by a cookie. No sign-in.
+Public-site mode (DEMO_MODE=1, for the live link): no sign-in. Each browser has two private
+spaces, remembered by cookies, and a switch between them:
+  - Demo: a fresh, empty space every time they switch to it; the guided tour fills it in.
+  - Live: their own real space; they type everything, and it's kept.
 """
 
 import os
@@ -20,7 +22,9 @@ import reminders
 
 load_dotenv()
 DEMO_MODE = os.getenv("DEMO_MODE") == "1"
-SPACE_COOKIE = "smart_space"
+SPACE_COOKIE = "smart_space"  # the browser's Demo space
+LIVE_COOKIE = "smart_live"    # the browser's Live space
+MODE_COOKIE = "smart_mode"    # which one is open: "demo" (the default) or "live"
 
 app = Flask(__name__)
 if DEMO_MODE:
@@ -32,30 +36,55 @@ if DEMO_MODE:
 
 # --- Which space is this request for? ------------------------------------------
 
+def new_space(is_demo):
+    """A new, empty private space (Smart starts empty: the tour helps fill it)."""
+    space_id = secrets.token_urlsafe(24)
+    db.create_space(space_id, is_demo=is_demo)
+    return space_id
+
+
 @app.before_request
 def choose_space():
-    g.new_space = None
+    g.new_cookies = {}
+    g.mode = None
     if not DEMO_MODE:
         db.set_space(db.LOCAL)  # your own laptop: one space for everything
         return
     if request.endpoint == "static":
         return  # files like app.js don't need a space
-    space_id = request.cookies.get(SPACE_COOKIE)
+    g.mode = "live" if request.cookies.get(MODE_COOKIE) == "live" else "demo"
+    cookie = LIVE_COOKIE if g.mode == "live" else SPACE_COOKIE
+    space_id = request.cookies.get(cookie)
     if not (space_id and db.space_exists(space_id)):
-        # A new visitor: give them their own private Smart. It starts empty: the guided
-        # tour has them build their cards and trials themselves.
-        space_id = secrets.token_urlsafe(24)
-        db.create_space(space_id, is_demo=True)
-        g.new_space = space_id
+        space_id = new_space(is_demo=g.mode == "demo")
+        g.new_cookies[cookie] = space_id
     db.set_space(space_id)
 
 
 @app.after_request
 def remember_space(response):
-    if g.get("new_space"):
-        response.set_cookie(SPACE_COOKIE, g.new_space, max_age=60 * 60 * 24 * 180,
+    for name, value in g.get("new_cookies", {}).items():
+        response.set_cookie(name, value, max_age=60 * 60 * 24 * 180,
                             httponly=True, samesite="Lax", secure=request.is_secure)
     return response
+
+
+@app.post("/api/mode")
+def switch_mode():
+    """Switch between Demo and Live. Switching to Demo always starts a fresh, empty demo."""
+    if not DEMO_MODE:
+        raise InvalidInput("form", "Demo and Live are only on the public site.")
+    mode = (request.get_json(silent=True) or {}).get("mode")
+    if mode == "demo":
+        g.new_cookies[SPACE_COOKIE] = new_space(is_demo=True)
+    elif mode == "live":
+        live_id = request.cookies.get(LIVE_COOKIE)
+        if not (live_id and db.space_exists(live_id)):
+            g.new_cookies[LIVE_COOKIE] = new_space(is_demo=False)
+    else:
+        raise InvalidInput("mode", "Choose demo or live.")
+    g.new_cookies[MODE_COOKIE] = mode
+    return jsonify(mode=mode)
 
 
 class InvalidInput(Exception):
@@ -177,7 +206,9 @@ def index():
 @app.get("/api/state")
 def get_state():
     return jsonify(
-        demo=DEMO_MODE,
+        hosted=DEMO_MODE,          # the public site: inbox, Demo/Live switch
+        mode=g.mode,               # "demo", "live", or None on a laptop
+        demo=g.mode == "demo",
         email=db.get_email(),
         time_zone=db.get_time_zone(),
         cards=db.list_cards(),

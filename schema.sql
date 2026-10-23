@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     created_at         TEXT NOT NULL
 );
 
--- Demo mode: every reminder lands here, shown in the app exactly as the email looks.
+-- The public site (Demo and Live): every reminder lands here, shown in the app exactly as the email looks.
 CREATE TABLE IF NOT EXISTS inbox (
     id              INTEGER PRIMARY KEY,
     space_id        TEXT NOT NULL,

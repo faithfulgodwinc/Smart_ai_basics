@@ -253,12 +253,6 @@ def renew(sub_id, deadline):
     return get_subscription(sub_id)
 
 
-def space_is_demo():
-    with connect() as conn:
-        row = conn.execute("SELECT is_demo FROM spaces WHERE id = ?", (current_space(),)).fetchone()
-    return bool(row and row["is_demo"])
-
-
 # --- Demo inbox -----------------------------------------------------------
 
 def add_inbox_item(subscription_id, subject, text_body, html_body, emailed):

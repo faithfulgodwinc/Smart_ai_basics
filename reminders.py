@@ -75,8 +75,8 @@ def _check(sub, now):
 
     email = db.get_email()
     card = db.get_card(sub["card_id"])
-    if db.space_is_demo():
-        return _deliver_to_demo_inbox(sub, card, email, days_before)
+    if db.current_space() != db.LOCAL:  # the public site, Demo or Live
+        return _deliver_to_inbox(sub, card, email, days_before)
     if email and mailer.send_reminder(email, sub, card["nickname"], days_before):
         db.mark_reminded(sub["id"], days_before)
         return {"reminder": "sent", "reminder_at": None}
@@ -84,18 +84,18 @@ def _check(sub, now):
     return {"reminder": "failed", "reminder_at": None}
 
 
-# Demo mode: protect the sender's Gmail. Each visitor gets a few real emails a day, and all
-# visitors together get a few dozen; everything still lands in the Demo inbox.
-DEMO_EMAILS_PER_SPACE_PER_DAY = 5
-DEMO_EMAILS_PER_DAY = 60
+# On the public site, protect the sender's Gmail. Each space gets a few real emails a day, and
+# everyone together a few dozen; every reminder still lands in the in-app inbox.
+EMAILS_PER_SPACE_PER_DAY = 5
+EMAILS_PER_DAY = 60
 
 
-def _deliver_to_demo_inbox(sub, card, email, days_before):
-    """Put the reminder in the visitor's Demo inbox, and email it too if they gave an address."""
+def _deliver_to_inbox(sub, card, email, days_before):
+    """Put the reminder in the space's in-app inbox, and email it too if they gave an address."""
     message = mailer.build_reminder(email or "demo-inbox@smart.local", sub, card["nickname"], days_before)
     emailed = False
-    if (email and db.real_emails_sent_today() < DEMO_EMAILS_PER_SPACE_PER_DAY
-            and db.real_emails_sent_today(all_spaces=True) < DEMO_EMAILS_PER_DAY):
+    if (email and db.real_emails_sent_today() < EMAILS_PER_SPACE_PER_DAY
+            and db.real_emails_sent_today(all_spaces=True) < EMAILS_PER_DAY):
         emailed = mailer.send(message)
     db.add_inbox_item(sub["id"], message["Subject"], message.get_body(("plain",)).get_content(),
                       message.get_body(("html",)).get_content(), emailed)

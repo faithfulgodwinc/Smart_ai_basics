@@ -305,6 +305,8 @@ AI Basics/
 
 Added after the proof of concept, so judges can try Smart on a public link. Switched on with `DEMO_MODE=1`; without it Smart is the single-person laptop app described above.
 
+- **Demo and Live.** Each browser has two private spaces and a switch (Profile, plus a Demo/Live badge on Home). Demo: switching to it always starts a fresh, empty space and the build-it tour. Live: the visitor's own space, kept in this browser; a guide-only tour ("fill it in yourself") on first use. In both, reminders always land in the in-app inbox and also go to the visitor's real email when they've given one (capped per space per day).
+
 - **Spaces instead of sign-in.** A `spaces` table; every card, subscription, setting and inbox item belongs to one. A visitor's browser gets a random space id in a long-lived, HTTP-only cookie on first visit; the server only ever reads and writes that space. On a laptop everything lives in the `local` space, and an older `smart.db` is moved into it automatically.
 - **No sample data.** A new demo space starts empty: the visitor builds it during the tour (Netflix on a new Side card, then Duolingo Max on a new Main card), so nothing on screen is pre-made.
 - **Demo inbox.** An `inbox` table stores every reminder for the space (subject, plain text, HTML, when). The reminder check stores it there in demo mode, and sends a real email only if the visitor gave an address and the space is under the daily cap. The app shows the HTML in a sandboxed frame and checks for new items while open.

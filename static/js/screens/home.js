@@ -17,7 +17,7 @@ export function renderHome(root, state) {
 
   if (!state.cards.length) {
     root.innerHTML = `
-      ${topBar(state.demo, (state.inbox[0]?.id || 0) > lastSeenInboxId())}
+      ${topBar(state, (state.inbox[0]?.id || 0) > lastSeenInboxId())}
       <div class="pt-24">
         <h1 class="text-3xl font-semibold tracking-tight">Nothing here yet.</h1>
         <p class="mt-3 text-graphite leading-relaxed">Add your first trial or subscription,<br>and the card it's on.</p>
@@ -31,7 +31,7 @@ export function renderHome(root, state) {
   }
 
   root.innerHTML = `
-    ${topBar(state.demo, (state.inbox[0]?.id || 0) > lastSeenInboxId())}
+    ${topBar(state, (state.inbox[0]?.id || 0) > lastSeenInboxId())}
     ${needsAttentionHtml(state)}
     <div class="card-carousel" aria-label="Your cards">
       ${state.cards.map((card, index) => cardHtml(card, index, cardTotal(state.subscriptions, card.id))).join("")}
@@ -90,12 +90,15 @@ function showCard(root, state) {
       : `<p class="py-6 text-graphite border-t border-line">Nothing here yet.</p>`}`;
 }
 
-function topBar(demo, unread = false) {
+function topBar(state, unread = false) {
   return `
     <header class="flex items-center justify-between pt-10 pb-8">
-      <span class="text-sm tracking-[0.08em] uppercase text-graphite">Smart</span>
+      <span class="flex items-center gap-2">
+        <span class="text-sm tracking-[0.08em] uppercase text-graphite">Smart</span>
+        ${state.hosted ? `<a href="#profile" class="mode-badge" title="Switch in Profile">${state.demo ? "Demo" : "Live"}</a>` : ""}
+      </span>
       <div class="flex items-center gap-2">
-      ${demo ? `<a href="#inbox" class="profile-button relative" aria-label="Demo inbox">
+      ${state.hosted ? `<a href="#inbox" class="profile-button relative" aria-label="${state.demo ? "Demo inbox" : "Inbox"}">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="13" rx="3"/><path d="m4.5 7 7.5 6 7.5-6"/></svg>
         <span data-inbox-dot class="inbox-dot" ${unread ? "" : "hidden"}></span>
       </a>` : ""}

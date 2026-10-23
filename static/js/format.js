@@ -119,9 +119,17 @@ export function todayIso(today = todayInTimeZone()) {
   return `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 }
 
-// Where reminders go, in words: "your Demo inbox", "your Demo inbox and you@x.com", or "you@x.com".
+// The in-app inbox's name: "Demo inbox" in Demo, "Inbox" in Live.
+export function inboxName(state) {
+  return state.demo ? "Demo inbox" : "Inbox";
+}
+
+// Where reminders go, in words: "your Demo inbox", "your inbox and you@x.com", or "you@x.com" (laptop).
 export function reminderDestination(state) {
-  if (state.demo) return state.email ? `your Demo inbox and ${state.email}` : "your Demo inbox";
+  if (state.hosted) {
+    const inbox = `your ${state.demo ? "Demo inbox" : "inbox"}`;
+    return state.email ? `${inbox} and ${state.email}` : inbox;
+  }
   return state.email || "";
 }
 

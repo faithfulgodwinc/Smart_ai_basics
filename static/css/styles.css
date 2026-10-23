@@ -323,3 +323,19 @@
 .tour-blocker.is-dim { background: rgba(10, 10, 10, 0.42); animation: fade 200ms var(--ease); }
 .tour-card .field-input { background: var(--paper); border-color: var(--line); }
 .tour-card .field-input:focus { border-color: var(--ink); }
+
+/* --- Demo / Live -------------------------------------------------------------- */
+.mode-badge {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 999px; color: var(--ink); background: var(--mist);
+  box-shadow: inset 2px 2px 5px rgba(10, 10, 10, 0.10), inset -2px -2px 5px rgba(255, 255, 255, 0.9);
+}
+.tour-pill {
+  position: fixed; z-index: 92; top: 12px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 16px; border-radius: 999px;
+  background: var(--ink); color: var(--paper); font-size: 13px; box-shadow: 0 10px 24px -10px rgba(10, 10, 10, 0.5);
+  max-width: calc(100% - 32px);
+}
+.tour-pill button { color: var(--paper); opacity: 0.75; text-decoration: underline; text-underline-offset: 2px; }
+.tour-blocker.is-open { pointer-events: none; }
+.tour-card.is-moving { opacity: 0.55; pointer-events: none; transition: opacity 150ms var(--ease); }

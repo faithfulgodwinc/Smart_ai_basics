@@ -90,7 +90,8 @@ With `DEMO_MODE=1`, Smart is safe to share on a public link:
 
 - **No sign-in.** Each visitor's browser gets its own private Smart (remembered by a cookie), already filled with sample cards, trials and one cancelled item. Nobody sees anyone else's.
 - **Demo inbox.** Reminders land inside Smart, shown exactly as the email looks, at the time you chose. Adding a real email is optional, and real emails are capped (5 a day per visitor, 60 a day overall) to protect the sender's Gmail.
-- **Guided tour** on the first visit, replayable from Profile.
+- **Demo and Live.** A switch in Profile. Demo starts fresh every time and the guided tour has you build it; Live is your own Smart, kept in this browser, with a lighter tour.
+- **Guided tour** on the first visit to each, replayable from Profile.
 
 Try it locally (PowerShell), with a separate database so your own data isn't mixed in:
 

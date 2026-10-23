@@ -43,3 +43,4 @@ export const renewSubscription = (id, deadline) => request("POST", `/api/subscri
 export const updateSubscription = (id, sub) => request("PUT", `/api/subscriptions/${id}`, sub);
 export const updateCard = (id, card) => request("PUT", `/api/cards/${id}`, card);
 export const getInbox = () => request("GET", "/api/inbox");
+export const switchMode = (mode) => request("POST", "/api/mode", { mode });
