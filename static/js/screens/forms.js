@@ -4,7 +4,7 @@
 import * as api from "../api.js";
 import { ApiError } from "../api.js";
 import {
-  allTimeZones, cleanMoney, escapeHtml, timeZoneOptions, todayIso, reminderAtText, reminderDestination, setTimeZone, timeZoneLabel,
+  allTimeZones, cleanMoney, escapeHtml, timeNow, timeZoneOptions, todayIso, reminderAtText, reminderDestination, setTimeZone, timeZoneLabel,
 } from "../format.js";
 import { toast } from "../toast.js";
 import { dateField, setPickerValue, timeField, wirePickers } from "../pickers.js";
@@ -57,6 +57,7 @@ export function renderSubscriptionForm(root, state, subId = null) {
         ${field("deadline", "Next billing date", dateField("deadline"))}
         ${field("reminder_time", "Remind me at", timeField("reminder_time"))}
       </div>
+      <p id="time-now-hint" class="-mt-3 text-sm text-ink" hidden></p>
       <p id="reminder-settings-line" class="-mt-3 text-sm text-graphite leading-relaxed"></p>
 
       ${field("card_id", "Card", `
@@ -91,7 +92,19 @@ export function renderSubscriptionForm(root, state, subId = null) {
     root.querySelector('[for="deadline"]').textContent = inputs.is_trial.checked ? "Trial ends" : "Next billing date";
   };
   inputs.is_trial.addEventListener("change", showTrialLabel);
-  wirePickers(root, { min: todayIso() }); // the calendar greys out days before today
+  // The calendar greys out days before today; the time wheel says what time it is now when the date is today.
+  const isToday = () => inputs.deadline.value === todayIso();
+  wirePickers(root, {
+    min: todayIso(),
+    timeNote: () => (isToday() ? `It's ${timeNow().words} now. Choose a later time for today.` : null),
+  });
+  const showTimeNow = () => {
+    const hint = root.querySelector("#time-now-hint");
+    hint.hidden = !isToday();
+    if (isToday()) hint.textContent = `It's ${timeNow().words} now. A reminder for today needs a later time.`;
+  };
+  form.addEventListener("change", showTimeNow);
+  showTimeNow();
 
   // Only numbers in the price: anything else is removed as you type or paste.
   inputs.monthly_cost.addEventListener("input", () => {
@@ -174,6 +187,11 @@ export function renderSubscriptionForm(root, state, subId = null) {
     const errors = { ...checkSubscription(values), ...checkSettings(settings) };
     const keptOldDate = editing && values.deadline === editing.deadline;
     if (values.deadline && !keptOldDate && values.deadline < todayIso()) errors.deadline = "Pick today or a later date.";
+    // A reminder for today has to be later than right now (an untouched old date and time is fine).
+    const keptOldTime = keptOldDate && values.reminder_time === editing.reminder_time;
+    if (values.deadline === todayIso() && !keptOldTime && values.reminder_time <= timeNow().hhmm) {
+      errors.reminder_time = `It's ${timeNow().words} now. Pick a reminder time after that.`;
+    }
     if (showErrors(root, errors)) return;
 
     const button = form.querySelector('[type="submit"]');

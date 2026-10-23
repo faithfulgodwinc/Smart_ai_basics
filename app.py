@@ -182,6 +182,16 @@ def not_in_the_past(deadline):
         raise InvalidInput("deadline", "Pick today or a later date.")
 
 
+def reminder_not_in_the_past(deadline, reminder_time):
+    """If the date is today, the reminder time has to be later than right now."""
+    now = reminders.local_now()
+    if deadline == now.date().isoformat() and reminder_time <= now.strftime("%H:%M"):
+        zone = db.get_time_zone()
+        where = f" ({zone.split('/')[-1].replace('_', ' ')} time)" if zone else ""
+        clock = now.strftime("%I:%M %p").lstrip("0")
+        raise InvalidInput("reminder_time", f"It's {clock} now{where}. Pick a reminder time after that.")
+
+
 def subscription_fields(body):
     source_type, source_value = valid_source(body)
     return {
@@ -265,6 +275,7 @@ def post_subscription():
         raise InvalidInput("time_zone", "Choose the time zone your reminders should follow.")
     fields = subscription_fields(request.get_json(silent=True) or {})
     not_in_the_past(fields["deadline"])
+    reminder_not_in_the_past(fields["deadline"], fields["reminder_time"])
     subscription = db.insert_subscription(fields)
     result = reminders.check_one(subscription["id"])  # sends it now if it's already due
     return jsonify(subscription=db.get_subscription(subscription["id"]), **result), 201
@@ -304,6 +315,8 @@ def put_subscription(sub_id):
         not_in_the_past(fields["deadline"])  # keeping an old date while fixing a typo is fine
     # A new date or time means new reminders, so forget which ones were already sent.
     reset = (fields["deadline"], fields["reminder_time"]) != (before["deadline"], before["reminder_time"])
+    if reset:
+        reminder_not_in_the_past(fields["deadline"], fields["reminder_time"])
     db.update_subscription(sub_id, fields, reset_reminders=reset)
     result = reminders.check_one(sub_id)
     return jsonify(subscription=db.get_subscription(sub_id), **result)

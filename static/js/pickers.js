@@ -21,7 +21,7 @@ export function timeField(name, value = "09:00") {
 }
 
 // Makes every picker field inside `root` open its picker. `min` = earliest allowed date.
-export function wirePickers(root, { min = null } = {}) {
+export function wirePickers(root, { min = null, timeNote = () => null } = {}) {
   for (const button of root.querySelectorAll("[data-picker]")) {
     showValue(button);
     button.addEventListener("click", () => {
@@ -31,7 +31,7 @@ export function wirePickers(root, { min = null } = {}) {
       };
       const title = root.querySelector(`[for="${button.id}"]`)?.textContent || "";
       if (button.dataset.picker === "date") openDatePicker({ value: button.value, min, title, onPick: pick });
-      else openTimePicker({ value: button.value, title, onPick: pick });
+      else openTimePicker({ value: button.value, title, note: timeNote(), onPick: pick });
     });
   }
 }
@@ -153,7 +153,7 @@ function uses24HourClock() {
   return cycle === "h23" || cycle === "h24";
 }
 
-function openTimePicker({ value, title, onPick }) {
+function openTimePicker({ value, title, note = null, onPick }) {
   const [hour24, minute] = (value || "09:00").split(":").map(Number);
   const twentyFour = uses24HourClock();
   const pad = (n) => String(n).padStart(2, "0");
@@ -171,6 +171,7 @@ function openTimePicker({ value, title, onPick }) {
     <div class="mx-auto mb-5 h-1 w-10 rounded-full bg-line"></div>
     <p class="text-sm text-graphite">${title}</p>
     <h2 class="mt-2 text-2xl font-semibold tracking-tight">Pick a time</h2>
+    ${note ? `<p class="mt-1 text-sm text-ink">${note}</p>` : ""}
     <div class="wheels mt-6">
       <div class="wheel-band" aria-hidden="true"></div>
       ${wheels.map((wheel) => `

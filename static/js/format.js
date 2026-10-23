@@ -158,3 +158,17 @@ export function timeZoneOptions(selected = "", suggested = detectedTimeZone()) {
     ${suggested && suggested !== selected ? `<optgroup label="Suggested">${option(suggested).replace(" selected", "")}</optgroup>` : ""}
     ${[...regions].map(([region, zones]) => `<optgroup label="${escapeHtml(region)}">${zones.map(option).join("")}</optgroup>`).join("")}`;
 }
+
+// "14:05" -> "2:05 PM" (or "14:05"), in the person's own clock style.
+export function clockLabel(hhmm) {
+  const [hour, minute] = hhmm.split(":").map(Number);
+  return new Date(2000, 0, 1, hour, minute).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
+// The time right now in the chosen time zone: "HH:MM", plus words for it ("2:05 PM, Lagos time").
+export function timeNow(timeZone = chosenTimeZone) {
+  const now = nowInTimeZone(timeZone);
+  const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const city = timeZone ? ` (${timeZone.split("/").pop().replace(/_/g, " ")} time)` : "";
+  return { hhmm, words: `${clockLabel(hhmm)}${city}` };
+}
