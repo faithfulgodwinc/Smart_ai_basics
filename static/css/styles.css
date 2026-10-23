@@ -6,6 +6,7 @@
   --line: #E7E5E4;
   --graphite: #6B6B6B;
   --ink: #0A0A0A;
+  --error: #D92D20; /* the only colour in Smart: something needs fixing */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -158,8 +159,8 @@
   appearance: none;
 }
 .field-input:focus { border-color: var(--ink); background: var(--paper); }
-.field-input.has-error { border-color: var(--ink); }
-.field-error { font-size: 13px; color: var(--ink); margin-top: 6px; }
+.field-input.has-error { border-color: var(--error); box-shadow: 0 0 0 3px rgba(217, 45, 32, 0.12); }
+.field-error { font-size: 13px; color: var(--error); margin-top: 6px; }
 .field-error:empty { display: none; }
 .field-error::before { content: "· "; }
 
@@ -323,6 +324,7 @@
 .tour-blocker.is-dim { background: rgba(10, 10, 10, 0.42); animation: fade 200ms var(--ease); }
 .tour-card .field-input { background: var(--paper); border-color: var(--line); }
 .tour-card .field-input:focus { border-color: var(--ink); }
+.tour-card .field-input.has-error { border-color: var(--error); }
 
 /* --- Demo / Live -------------------------------------------------------------- */
 .mode-badge {

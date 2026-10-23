@@ -345,6 +345,11 @@ export function startTour(state) {
       </form>`;
     const form = card.querySelector("form");
     const emailInput = card.querySelector("#tour-email");
+    // The red clears as soon as they fix it.
+    card.querySelector("#tour-time-zone").addEventListener("change", (event) => {
+      event.target.classList.remove("has-error");
+      card.querySelector('[data-error-for="tour-time-zone"]').textContent = "";
+    });
     card.querySelector("#tour-also-email").addEventListener("change", (event) => {
       emailInput.hidden = !event.target.checked;
       if (event.target.checked) emailInput.focus();
@@ -361,13 +366,20 @@ export function startTour(state) {
       const wantsEmail = card.querySelector("#tour-also-email").checked;
       const email = emailInput.value.trim();
       for (const slot of card.querySelectorAll("[data-error-for]")) slot.textContent = "";
+      for (const input of card.querySelectorAll(".has-error")) input.classList.remove("has-error");
+      // Show what needs fixing: the field outlined in red, its message, and the focus on it.
+      const flag = (id, message) => {
+        card.querySelector(`[data-error-for="${id}"]`).textContent = message;
+        const field = card.querySelector(`#${id}`);
+        field.classList.add("has-error");
+        field.focus();
+        place();
+      };
       if (!allTimeZones().includes(timeZone)) {
-        card.querySelector('[data-error-for="tour-time-zone"]').textContent = "Please select your time zone.";
-        return place();
+        return flag("tour-time-zone", "Please select your time zone.");
       }
       if (wantsEmail && !EMAIL_PATTERN.test(email)) {
-        card.querySelector('[data-error-for="tour-email"]').textContent = "That email doesn't look right. Try name@example.com.";
-        return place();
+        return flag("tour-email", "That email doesn't look right. Try name@example.com.");
       }
       try {
         applySettings(state, await api.saveSettings({ time_zone: timeZone, ...(wantsEmail ? { email } : {}) }));

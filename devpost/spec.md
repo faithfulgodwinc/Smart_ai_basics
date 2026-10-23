@@ -96,6 +96,7 @@ Carried from `prd.md > Look and Feel` and `scope.md > Inspiration & Identity`. T
 - **Palette:** monochrome. Defined once as Tailwind theme variables in `index.html` (`@theme`), and Tailwind's default color palette is turned off so nothing colorful can slip in:
   - `--color-paper` `#FFFFFF` (background), `--color-mist` `#F5F5F4` (soft panels), `--color-line` `#E7E5E4` (hairlines), `--color-graphite` `#6B6B6B` (secondary text), `--color-ink` `#0A0A0A` (type, cards, emphasis).
   - The only accent is ink itself. "Due soon" uses a filled black pill, not red.
+  - One exception, added at the learner's request: `--error` `#D92D20` red, used only for "something needs fixing" (a field's outline and its message).
 - **Typography:** `-apple-system, "SF Pro Text", Inter, system-ui, sans-serif`. Big, light-weight numbers for totals. Tight letter-spacing on headings, generous line-height on body text. Very little text overall.
 - **Space and density:** spacious and calm. A single column at phone width (max ~440px, centered on wider screens), large padding, rows separated by hairlines rather than boxes.
 - **Cards:** the centerpiece. Near-black rounded rectangles (credit-card proportions 1.586:1) with a soft gradient sheen, a subtle noise texture, nickname large, bank and name on card small, the card's monthly total, and a small row of decorative network marks drawn as simple inline SVG shapes (never claiming the real network).
