@@ -83,7 +83,8 @@ def init_db():
 
 
 def now():
-    return datetime.now().isoformat(timespec="seconds")
+    # With the server's UTC offset (e.g. "+00:00"), so a browser in another time zone reads the right moment.
+    return datetime.now().astimezone().isoformat(timespec="seconds")
 
 
 # --- Spaces ---------------------------------------------------------------

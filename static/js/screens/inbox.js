@@ -47,7 +47,7 @@ export async function renderInbox(root, state, itemId) {
             <a href="#inbox/${i.id}" class="row-link flex items-start justify-between gap-4 py-4">
               <div class="min-w-0">
                 <p class="font-medium">${escapeHtml(i.subject)}</p>
-                <p class="text-sm text-graphite mt-0.5">${receivedText(i.created_at)}${i.emailed ? " · also emailed" : ""}</p>
+                <p class="text-sm text-graphite mt-0.5">${receivedText(i.created_at, state.time_zone)}${i.emailed ? " · also emailed" : ""}</p>
               </div>
               <span class="text-graphite" aria-hidden="true">&rsaquo;</span>
             </a>
@@ -60,7 +60,7 @@ function renderMessage(root, item, state) {
   root.innerHTML = `
     <header class="pt-10 pb-6">
       <a href="#inbox" data-replace class="text-sm text-graphite">&larr; ${inboxName(state)}</a>
-      <p class="mt-6 text-sm text-graphite">From Smart · ${receivedText(item.created_at)}</p>
+      <p class="mt-6 text-sm text-graphite">From Smart · ${receivedText(item.created_at, state.time_zone)}</p>
       <h1 class="mt-1 text-2xl font-semibold tracking-tight">${escapeHtml(item.subject)}</h1>
     </header>
     <iframe class="inbox-frame" title="${escapeHtml(item.subject)}" sandbox="allow-popups allow-popups-to-escape-sandbox"></iframe>`;
@@ -68,7 +68,10 @@ function renderMessage(root, item, state) {
   root.querySelector("iframe").srcdoc = `<base target="_blank">${item.html_body}`;
 }
 
-function receivedText(createdAt) {
+// When it arrived, on the clock of the time zone they chose (like every other time in Smart),
+// not the browser's. Older reminders were saved without a UTC offset, so they're read as before.
+function receivedText(createdAt, timeZone) {
   const when = new Date(createdAt);
-  return when.toLocaleString([], { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+  return when.toLocaleString([], { day: "numeric", month: "short", hour: "numeric", minute: "2-digit",
+    ...(timeZone ? { timeZone } : {}) });
 }
